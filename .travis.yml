@@ -8,6 +8,12 @@ node_js:
 jdk:
   - oraclejdk8
 sudo: false
+addons:
+  sonarcloud:
+    organisation: "adyen"
+  branches:
+    - master
+    - develop
 cache:
   directories:
     - node
@@ -27,7 +33,7 @@ before_install:
 install:
 script:
   - chmod +x gradlew
-  - ./gradlew clean test
+  - ./gradlew clean test sonarqube --no-daemon
   - ./gradlew bootRepackage -Pprod -x test
 notifications:
   webhooks:
