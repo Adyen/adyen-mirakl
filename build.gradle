@@ -156,7 +156,7 @@ repositories {
             username "$System.env.MIRAKL_SDK_USER"
             password "$System.env.MIRAKL_SDK_PASSWORD"
         }
-        url "https://artifactory.mirakl.net/artifactory/mirakl-ext-repo/"
+        url "https://artifactory.mirakl.net/artifactory/mirakl-repo/"
     }
 }
 
