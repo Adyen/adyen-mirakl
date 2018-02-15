@@ -49,9 +49,6 @@ public class LoggingConfiguration {
             addLogstashAppender(context);
             addContextListener(context);
         }
-        if (jHipsterProperties.getMetrics().getLogs().isEnabled()) {
-            setMetricsMarkerLogbackFilter(context);
-        }
     }
 
     private void addContextListener(LoggerContext context) {
@@ -92,32 +89,6 @@ public class LoggingConfiguration {
         asyncLogstashAppender.start();
 
         context.getLogger("ROOT").addAppender(asyncLogstashAppender);
-    }
-
-    // Configure a log filter to remove "metrics" logs from all appenders except the "LOGSTASH" appender
-    private void setMetricsMarkerLogbackFilter(LoggerContext context) {
-        log.info("Filtering metrics logs from all appenders except the {} appender", LOGSTASH_APPENDER_NAME);
-        OnMarkerEvaluator onMarkerMetricsEvaluator = new OnMarkerEvaluator();
-        onMarkerMetricsEvaluator.setContext(context);
-        onMarkerMetricsEvaluator.addMarker("metrics");
-        onMarkerMetricsEvaluator.start();
-        EvaluatorFilter<ILoggingEvent> metricsFilter = new EvaluatorFilter<>();
-        metricsFilter.setContext(context);
-        metricsFilter.setEvaluator(onMarkerMetricsEvaluator);
-        metricsFilter.setOnMatch(FilterReply.DENY);
-        metricsFilter.start();
-
-        for (ch.qos.logback.classic.Logger logger : context.getLoggerList()) {
-            for (Iterator<Appender<ILoggingEvent>> it = logger.iteratorForAppenders(); it.hasNext();) {
-                Appender<ILoggingEvent> appender = it.next();
-                if (!appender.getName().equals(ASYNC_LOGSTASH_APPENDER_NAME)) {
-                    log.debug("Filter metrics logs from the {} appender", appender.getName());
-                    appender.setContext(context);
-                    appender.addFilter(metricsFilter);
-                    appender.start();
-                }
-            }
-        }
     }
 
     /**
