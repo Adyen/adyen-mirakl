@@ -3,6 +3,7 @@ package com.adyen.mirakl.config;
 import com.adyen.Client;
 import com.adyen.Config;
 import com.adyen.enums.Environment;
+import com.adyen.service.Account;
 import com.adyen.service.Notification;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -77,5 +78,10 @@ public class AdyenConfiguration {
     @Bean
     public Notification adyenNotification(){
         return new Notification(adyenClient());
+    }
+
+    @Bean
+    public Account createAccountService(){
+        return new Account(adyenClient());
     }
 }

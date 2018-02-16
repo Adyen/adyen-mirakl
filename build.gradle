@@ -237,7 +237,7 @@ dependencies {
 
     compile "com.adyen:adyen-java-api-library:1.3.0"
     compile "com.mirakl:mmp-sdk-operator:3.25.19"
-    testCompile "com.mirakl:mmp-sdk-front:3.25.19"
+    compile "com.mirakl:mmp-sdk-front:3.25.19"
 }
 
 task cleanResources(type: Delete) {
