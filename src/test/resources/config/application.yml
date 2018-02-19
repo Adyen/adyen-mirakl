@@ -107,6 +107,7 @@ jhipster:
 # ===================================================================
 
 application:
+    shopUpdaterCron: "0 * * * * ?"
 
 shops:
     shopIds:

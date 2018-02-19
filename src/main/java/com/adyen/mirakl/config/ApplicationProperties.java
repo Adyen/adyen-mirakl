@@ -10,5 +10,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @ConfigurationProperties(prefix = "application", ignoreUnknownFields = false)
 public class ApplicationProperties {
+    private String shopUpdaterCron;
 
+    public String getShopUpdaterCron() {
+        return shopUpdaterCron;
+    }
+
+    public void setShopUpdaterCron(final String shopUpdaterCron) {
+        this.shopUpdaterCron = shopUpdaterCron;
+    }
 }

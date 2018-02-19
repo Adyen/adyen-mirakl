@@ -26,18 +26,18 @@ public class StartupValidatorTest {
     @Mock
     private ContextRefreshedEvent eventMock;
     @Mock
-    private MiraklFrontOperatorAdditionalField miraklFrontOperatorAdditionalFieldMock1, miraklFrontOperatorAdditionalFieldMock2;
+    private MiraklFrontOperatorAdditionalField miraklFrontOperatorAdditionalFieldMock1, miraklFrontOperatorAdditionalFieldMock2, miraklFrontOperatorAdditionalFieldMock3;
 
     @Rule
-    public ExpectedException thrown= ExpectedException.none();
+    public ExpectedException thrown = ExpectedException.none();
 
 
     @Test
     public void startupSuccess() {
-        when(miraklMarketplacePlatformOperatorApiClientMock.getAdditionalFields(any(com.mirakl.client.mmp.operator.request.additionalfield.MiraklGetAdditionalFieldRequest.class))).thenReturn(ImmutableList.of(miraklFrontOperatorAdditionalFieldMock1, miraklFrontOperatorAdditionalFieldMock2));
+        when(miraklMarketplacePlatformOperatorApiClientMock.getAdditionalFields(any(com.mirakl.client.mmp.operator.request.additionalfield.MiraklGetAdditionalFieldRequest.class))).thenReturn(ImmutableList.of(miraklFrontOperatorAdditionalFieldMock1, miraklFrontOperatorAdditionalFieldMock2, miraklFrontOperatorAdditionalFieldMock3));
         when(miraklFrontOperatorAdditionalFieldMock1.getCode()).thenReturn("nonValidCode");
         when(miraklFrontOperatorAdditionalFieldMock2.getCode()).thenReturn(StartupValidator.CustomMiraklFields.ADYEN_LEGAL_ENTITY_TYPE.toString());
-
+        when(miraklFrontOperatorAdditionalFieldMock3.getCode()).thenReturn(StartupValidator.CustomMiraklFields.ADYEN_BANK_COUNTRY.toString());
         testObj.onApplicationEvent(eventMock);
     }
 
@@ -49,6 +49,7 @@ public class StartupValidatorTest {
         when(miraklMarketplacePlatformOperatorApiClientMock.getAdditionalFields(any(com.mirakl.client.mmp.operator.request.additionalfield.MiraklGetAdditionalFieldRequest.class))).thenReturn(ImmutableList.of(miraklFrontOperatorAdditionalFieldMock1, miraklFrontOperatorAdditionalFieldMock2));
         when(miraklFrontOperatorAdditionalFieldMock1.getCode()).thenReturn("nonValidCode");
         when(miraklFrontOperatorAdditionalFieldMock2.getCode()).thenReturn("anotherNonValidCode");
+        when(miraklFrontOperatorAdditionalFieldMock3.getCode()).thenReturn("aotherAnotherNonValidCode");
 
         testObj.onApplicationEvent(eventMock);
     }

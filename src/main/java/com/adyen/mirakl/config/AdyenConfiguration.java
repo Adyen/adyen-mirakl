@@ -51,7 +51,7 @@ public class AdyenConfiguration {
     }
 
     @Bean
-    public Config adyenConfig(){
+    public Config adyenConfig() {
         final Config config = new Config();
         config.setUsername(userName);
         config.setPassword(password);
@@ -60,19 +60,19 @@ public class AdyenConfiguration {
     }
 
     @Bean
-    public Client adyenClient(){
+    public Client adyenClient() {
         Client client = new Client(adyenConfig());
         client.setEnvironment(environment);
         return client;
     }
 
     @Bean
-    public Notification adyenNotification(){
+    public Notification adyenNotification() {
         return new Notification(adyenClient());
     }
 
     @Bean
-    public Account createAccountService() {
+    public Account adyenAccountService() {
         return new Account(adyenClient());
     }
 }
