@@ -144,3 +144,6 @@ jhipster:
 
 application:
 
+adyenNotificationsConfig:
+    notificationConfigurationDetails:
+          description: ${ADYEN_NOTIFY_URL}
