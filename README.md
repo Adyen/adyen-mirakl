@@ -23,6 +23,11 @@ export ADYEN_NOTIFY_USERNAME=<notifyUsername>
 export ADYEN_NOTIFY_PASSWORD=<notifyPassword>
 ```
 
+Specify name of the application if you wish to deploy to heroku.
+```
+export HEROKU_APP_NAME=<heroku-app-name>
+```
+
 And run `source ~/.bashrc`
 
 
