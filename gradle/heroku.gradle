@@ -1,0 +1,14 @@
+apply plugin: 'com.heroku.sdk.heroku-gradle'
+
+heroku {
+  appName = "${System.env.HEROKU_APP_NAME}"
+}
+
+gradle.taskGraph.whenReady {taskGraph ->
+    taskGraph.afterTask() {task ->
+        if (task.getName().equals('stage') && System.getenv("DYNO") != null) {
+            delete "node_modules"
+            delete fileTree(dir: "build/libs", exclude: "*.war")
+        }
+    }
+}
