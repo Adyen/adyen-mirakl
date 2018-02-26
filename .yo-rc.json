@@ -27,6 +27,8 @@
     "nativeLanguage": "en",
     "languages": [
       "en"
-    ]
+    ],
+    "herokuDeployType": "jar",
+    "herokuAppName": "adyen-mirakl-connector"
   }
 }
