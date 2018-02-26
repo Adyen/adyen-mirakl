@@ -80,9 +80,9 @@ public class ShopService {
                 }
             } catch (ApiException e) {
                 // account does not exists yet
-                log.warn("MarketPay Api Exception: " + e.getError());
+                log.warn("MarketPay Api Exception: " + e.getError(), e);
             } catch (Exception e) {
-                log.warn("Exception: " + e.getMessage());
+                log.warn("Exception: " + e.getMessage(), e);
             }
         }
     }

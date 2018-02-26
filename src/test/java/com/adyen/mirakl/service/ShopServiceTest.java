@@ -124,7 +124,7 @@ public class ShopServiceTest {
         MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue additionalField = new MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue();
         additionalField.setCode(String.valueOf(MiraklStartupValidator.CustomMiraklFields.ADYEN_LEGAL_ENTITY_TYPE));
         additionalField.setValue(MiraklStartupValidator.AdyenLegalEntityType.INDIVIDUAL.toString());
-        setup(MiraklStartupValidator.AdyenLegalEntityType.INDIVIDUAL, ImmutableList.of(additionalField));
+        setup(ImmutableList.of(additionalField));
         when(adyenAccountServiceMock.createAccountHolder(createAccountHolderRequestCaptor.capture())).thenReturn(null);
         when(getAccountHolderResponseMock.getAccountHolderCode()).thenReturn("");
 
@@ -147,7 +147,7 @@ public class ShopServiceTest {
         MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue additionalField = new MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue();
         additionalField.setCode(String.valueOf(MiraklStartupValidator.CustomMiraklFields.ADYEN_LEGAL_ENTITY_TYPE));
         additionalField.setValue(MiraklStartupValidator.AdyenLegalEntityType.INDIVIDUAL.toString());
-        setup(MiraklStartupValidator.AdyenLegalEntityType.INDIVIDUAL, ImmutableList.of(additionalField));
+        setup(ImmutableList.of(additionalField));
         when(adyenAccountServiceMock.updateAccountHolder(updateAccountHolderRequestCaptor.capture())).thenReturn(null);
         when(getAccountHolderResponseMock.getAccountHolderCode()).thenReturn("alreadyExisting");
 
@@ -254,7 +254,7 @@ public class ShopServiceTest {
                                                                         .stream()
                                                                         .flatMap(Collection::stream)
                                                                         .collect(Collectors.toList());
-        setup(MiraklStartupValidator.AdyenLegalEntityType.BUSINESS, addtionalFields);
+        setup(addtionalFields);
 
         when(adyenAccountServiceMock.createAccountHolder(createAccountHolderRequestCaptor.capture())).thenReturn(null);
         when(getAccountHolderResponseMock.getAccountHolderCode()).thenReturn("");
@@ -315,7 +315,7 @@ public class ShopServiceTest {
         return miraklContactInformation;
     }
 
-    private void setup(MiraklStartupValidator.AdyenLegalEntityType type, List<MiraklAdditionalFieldValue> additionalFields) throws Exception {
+    private void setup(List<MiraklAdditionalFieldValue> additionalFields) throws Exception {
         MiraklShops miraklShops = new MiraklShops();
         List<MiraklShop> shops = new ArrayList<>();
         miraklShops.setShops(shops);
@@ -328,6 +328,7 @@ public class ShopServiceTest {
         contactInformation.setEmail("email");
         contactInformation.setFirstname("firstName");
         contactInformation.setLastname("lastName");
+        contactInformation.setCountry("GB");
         contactInformation.setCivility("Mrs");
         shop.setContactInformation(contactInformation);
 
