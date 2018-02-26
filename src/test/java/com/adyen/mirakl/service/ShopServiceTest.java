@@ -102,6 +102,11 @@ public class ShopServiceTest {
     }
 
     @Test
+    public void testGetIso2CountryCode() {
+        assertEquals("GB", shopService.getIso2CountryCodeFromIso3("GBR"));
+    }
+
+    @Test
     public void testRetrieveUpdatedShopsZeroShops() throws Exception {
         MiraklShops miraklShops = new MiraklShops();
         List<MiraklShop> shops = new ArrayList<>();
@@ -119,7 +124,7 @@ public class ShopServiceTest {
         MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue additionalField = new MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue();
         additionalField.setCode(String.valueOf(MiraklStartupValidator.CustomMiraklFields.ADYEN_LEGAL_ENTITY_TYPE));
         additionalField.setValue(MiraklStartupValidator.AdyenLegalEntityType.INDIVIDUAL.toString());
-        setup(MiraklStartupValidator.AdyenLegalEntityType.INDIVIDUAL, ImmutableList.of(additionalField));
+        setup(ImmutableList.of(additionalField));
         when(adyenAccountServiceMock.createAccountHolder(createAccountHolderRequestCaptor.capture())).thenReturn(null);
         when(getAccountHolderResponseMock.getAccountHolderCode()).thenReturn("");
 
@@ -142,7 +147,7 @@ public class ShopServiceTest {
         MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue additionalField = new MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue();
         additionalField.setCode(String.valueOf(MiraklStartupValidator.CustomMiraklFields.ADYEN_LEGAL_ENTITY_TYPE));
         additionalField.setValue(MiraklStartupValidator.AdyenLegalEntityType.INDIVIDUAL.toString());
-        setup(MiraklStartupValidator.AdyenLegalEntityType.INDIVIDUAL, ImmutableList.of(additionalField));
+        setup(ImmutableList.of(additionalField));
         when(adyenAccountServiceMock.updateAccountHolder(updateAccountHolderRequestCaptor.capture())).thenReturn(null);
         when(getAccountHolderResponseMock.getAccountHolderCode()).thenReturn("alreadyExisting");
 
@@ -245,20 +250,24 @@ public class ShopServiceTest {
         List<MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue> ubo4 = createMiraklAdditionalUboField("4");
 
 
-        List<MiraklAdditionalFieldValue> addtionalFields = ImmutableList.of(ubo1, ubo2, ubo3, ubo4, ImmutableList.of(additionalField)).stream().flatMap(Collection::stream).collect(Collectors.toList());
-        setup(MiraklStartupValidator.AdyenLegalEntityType.BUSINESS, addtionalFields);
+        List<MiraklAdditionalFieldValue> addtionalFields = ImmutableList.of(ubo1, ubo2, ubo3, ubo4, ImmutableList.of(additionalField))
+                                                                        .stream()
+                                                                        .flatMap(Collection::stream)
+                                                                        .collect(Collectors.toList());
+        setup(addtionalFields);
 
         when(adyenAccountServiceMock.createAccountHolder(createAccountHolderRequestCaptor.capture())).thenReturn(null);
         when(getAccountHolderResponseMock.getAccountHolderCode()).thenReturn("");
 
         shopService.retrieveUpdatedShops();
 
-        List<ShareholderContact> shareHolders = createAccountHolderRequestCaptor.getAllValues().stream()
-            .map(CreateAccountHolderRequest::getAccountHolderDetails)
-            .map(AccountHolderDetails::getBusinessDetails)
-            .map(BusinessDetails::getShareholders)
-            .flatMap(Collection::stream)
-            .collect(Collectors.toList());
+        List<ShareholderContact> shareHolders = createAccountHolderRequestCaptor.getAllValues()
+                                                                                .stream()
+                                                                                .map(CreateAccountHolderRequest::getAccountHolderDetails)
+                                                                                .map(AccountHolderDetails::getBusinessDetails)
+                                                                                .map(BusinessDetails::getShareholders)
+                                                                                .flatMap(Collection::stream)
+                                                                                .collect(Collectors.toList());
 
         Set<String> firstNames = shareHolders.stream().map(ShareholderContact::getName).map(Name::getFirstName).collect(Collectors.toSet());
         Set<String> lastNames = shareHolders.stream().map(ShareholderContact::getName).map(Name::getLastName).collect(Collectors.toSet());
@@ -274,17 +283,17 @@ public class ShopServiceTest {
 
     private List<MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue> createMiraklAdditionalUboField(String uboNumber) {
         MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue additionalFieldUboCivility = new MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue();
-        additionalFieldUboCivility.setValue("firstname"+uboNumber);
-        additionalFieldUboCivility.setCode("adyen-ubo"+uboNumber+"-firstname");
+        additionalFieldUboCivility.setValue("firstname" + uboNumber);
+        additionalFieldUboCivility.setCode("adyen-ubo" + uboNumber + "-firstname");
         MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue additionalFieldUboFirstName = new MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue();
-        additionalFieldUboFirstName.setValue("lastname"+uboNumber);
-        additionalFieldUboFirstName.setCode("adyen-ubo"+uboNumber+"-lastname");
+        additionalFieldUboFirstName.setValue("lastname" + uboNumber);
+        additionalFieldUboFirstName.setCode("adyen-ubo" + uboNumber + "-lastname");
         MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue additionalFieldUboLastName = new MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue();
-        additionalFieldUboLastName.setValue("gender"+uboNumber);
-        additionalFieldUboLastName.setCode("adyen-ubo"+uboNumber+"-civility");
+        additionalFieldUboLastName.setValue("gender" + uboNumber);
+        additionalFieldUboLastName.setCode("adyen-ubo" + uboNumber + "-civility");
         MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue additionalFieldUboDob = new MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue();
-        additionalFieldUboDob.setValue("email"+uboNumber);
-        additionalFieldUboDob.setCode("adyen-ubo"+uboNumber+"-email");
+        additionalFieldUboDob.setValue("email" + uboNumber);
+        additionalFieldUboDob.setCode("adyen-ubo" + uboNumber + "-email");
         return ImmutableList.of(additionalFieldUboCivility, additionalFieldUboFirstName, additionalFieldUboLastName, additionalFieldUboDob);
     }
 
@@ -306,7 +315,7 @@ public class ShopServiceTest {
         return miraklContactInformation;
     }
 
-    private void setup(MiraklStartupValidator.AdyenLegalEntityType type, List<MiraklAdditionalFieldValue> additionalFields) throws Exception {
+    private void setup(List<MiraklAdditionalFieldValue> additionalFields) throws Exception {
         MiraklShops miraklShops = new MiraklShops();
         List<MiraklShop> shops = new ArrayList<>();
         miraklShops.setShops(shops);
@@ -319,6 +328,7 @@ public class ShopServiceTest {
         contactInformation.setEmail("email");
         contactInformation.setFirstname("firstName");
         contactInformation.setLastname("lastName");
+        contactInformation.setCountry("GB");
         contactInformation.setCivility("Mrs");
         shop.setContactInformation(contactInformation);
 
