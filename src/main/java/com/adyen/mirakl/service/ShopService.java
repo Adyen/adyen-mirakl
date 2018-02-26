@@ -1,6 +1,7 @@
 package com.adyen.mirakl.service;
 
 import com.adyen.mirakl.startup.MiraklStartupValidator;
+import com.adyen.model.Address;
 import com.adyen.model.Name;
 import com.adyen.model.marketpay.*;
 import com.adyen.model.marketpay.CreateAccountHolderRequest.LegalEntityEnum;
@@ -133,6 +134,7 @@ public class ShopService {
 
         // Set AccountHolderDetails
         AccountHolderDetails accountHolderDetails = new AccountHolderDetails();
+        accountHolderDetails.setAddress(setAddressDetails(shop));
 
         if (LegalEntityEnum.INDIVIDUAL.equals(legalEntity)) {
             IndividualDetails individualDetails = createIndividualDetailsFromShop(shop);
@@ -140,7 +142,7 @@ public class ShopService {
         } else if (LegalEntityEnum.BUSINESS.equals(legalEntity)) {
             BusinessDetails businessDetails = createBusinessDetailsFromShop(shop);
             accountHolderDetails.setBusinessDetails(businessDetails);
-        }else{
+        } else {
             throw new IllegalArgumentException(legalEntity.toString() + " not supported");
         }
 
@@ -172,9 +174,34 @@ public class ShopService {
         return Optional.of(shop.getContactInformation()).orElseThrow(() -> new RuntimeException("Contact information not found"));
     }
 
+    private Address setAddressDetails(MiraklShop shop) {
+        MiraklContactInformation contactInformation = getContactInformationFromShop(shop);
+        if (! contactInformation.getCountry().isEmpty()) {
+            Address address = new Address();
+            address.setCountry(contactInformation.getCountry());
+            address.setHouseNumberOrName(getHouseNumberFromStreet(contactInformation.getStreet1()));
+            address.setPostalCode(contactInformation.getZipCode());
+            address.setStateOrProvince(contactInformation.getState());
+            address.setStreet(contactInformation.getStreet1());
+            address.setCountry(getIso2CountryCodeFromIso3(contactInformation.getCountry()));
+            return address;
+        }
+        return null;
+    }
+
 
     private BusinessDetails createBusinessDetailsFromShop(final MiraklShop shop) {
         BusinessDetails businessDetails = new BusinessDetails();
+
+        if (shop.getProfessionalInformation() != null) {
+            if (! shop.getProfessionalInformation().getCorporateName().isEmpty()) {
+                businessDetails.setLegalBusinessName(shop.getProfessionalInformation().getCorporateName());
+            }
+            if (! shop.getProfessionalInformation().getTaxIdentificationNumber().isEmpty()) {
+                businessDetails.setTaxId(shop.getProfessionalInformation().getTaxIdentificationNumber());
+            }
+        }
+
         businessDetails.setShareholders(extractUbos(shop));
         return businessDetails;
     }
@@ -317,7 +344,7 @@ public class ShopService {
         Map<String, String> extractedKeysFromMirakl = shop.getAdditionalFieldValues().stream()
             .filter(MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue.class::isInstance)
             .map(MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue.class::cast)
-            .collect(Collectors.toMap(MiraklAdditionalFieldValue::getCode, MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue::getValue));
+            .collect(Collectors.toMap(MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue::getValue, MiraklAdditionalFieldValue::getCode));
 
         ImmutableList.Builder<ShareholderContact> builder = ImmutableList.builder();
         generateKeys().forEach((i, keys) -> {
@@ -379,4 +406,34 @@ public class ShopService {
     public void setMaxUbos(Integer maxUbos) {
         this.maxUbos = maxUbos;
     }
+
+
+    /**
+     * Get ISO-2 Country Code from ISO-3 Country Code
+     */
+    protected String getIso2CountryCodeFromIso3(String iso3) {
+        if (! iso3.isEmpty()) {
+            return countryCodes().get(iso3);
+        }
+        return null;
+    }
+
+
+    /**
+     * Do this on application start-up
+     */
+    public Map<String, String> countryCodes() {
+
+        Map<String, String> countryCodes = new HashMap<String, String>();
+
+        String[] isoCountries = Locale.getISOCountries();
+
+        for (String country : isoCountries) {
+            Locale locale = new Locale("", country);
+            countryCodes.put(locale.getISO3Country(), locale.getCountry());
+        }
+        return countryCodes;
+    }
+
+
 }
