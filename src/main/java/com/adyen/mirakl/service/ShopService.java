@@ -344,7 +344,7 @@ public class ShopService {
         Map<String, String> extractedKeysFromMirakl = shop.getAdditionalFieldValues().stream()
             .filter(MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue.class::isInstance)
             .map(MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue.class::cast)
-            .collect(Collectors.toMap(MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue::getValue, MiraklAdditionalFieldValue::getCode));
+            .collect(Collectors.toMap(MiraklAdditionalFieldValue::getCode, MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue::getValue));
 
         ImmutableList.Builder<ShareholderContact> builder = ImmutableList.builder();
         generateKeys().forEach((i, keys) -> {
