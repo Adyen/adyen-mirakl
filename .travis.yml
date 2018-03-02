@@ -27,11 +27,11 @@ before_install:
 install:
 script:
   - chmod +x gradlew
-  - ./gradlew clean test --stacktrace
+  - ./gradlew clean test --stacktrace --info
   - 'if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
       ./gradlew sonarqube --no-daemon -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_TOKEN -Dsonar.branch.name=$TRAVIS_BRANCH -Dsonar.organization=adyen -Dsonar.analysis.mode=preview -Dsonar.github.pullRequest=$TRAVIS_PULL_REQUEST -Dsonar.github.repository=$TRAVIS_REPO_SLUG -Dsonar.github.oauth=$SONAR_GITHUB_TOKEN;
     fi'
-  - ./gradlew cucumberTest --stacktrace
+  - ./gradlew cucumberTest --stacktrace --info
   - ./gradlew bootRepackage -Pprod -x test
 notifications:
   webhooks:
