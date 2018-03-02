@@ -58,6 +58,8 @@ public class StartUpCucumberHook implements ApplicationListener<ContextRefreshed
         configurationDetails.setEventConfigs(ImmutableList.of(notificationEventConfiguration(NotificationEventConfiguration.EventTypeEnum.ACCOUNT_HOLDER_CREATED,
             NotificationEventConfiguration.IncludeModeEnum.INCLUDE),
             notificationEventConfiguration(NotificationEventConfiguration.EventTypeEnum.ACCOUNT_HOLDER_VERIFICATION,
+                NotificationEventConfiguration.IncludeModeEnum.INCLUDE),
+            notificationEventConfiguration(NotificationEventConfiguration.EventTypeEnum.ACCOUNT_HOLDER_UPDATED,
                 NotificationEventConfiguration.IncludeModeEnum.INCLUDE)
         ));
 

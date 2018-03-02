@@ -1,16 +1,19 @@
 package com.adyen.mirakl.cucumber.stepdefs.helpers.stepshelper;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import net.minidev.json.JSONArray;
-import org.springframework.stereotype.Service;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.mirakl.client.mmp.domain.common.MiraklAdditionalFieldValue;
 import com.mirakl.client.mmp.domain.shop.MiraklShop;
+import com.mirakl.client.mmp.domain.shop.bank.MiraklIbanBankAccountInformation;
+import com.mirakl.client.mmp.domain.shop.bank.MiraklPaymentInformation;
+import net.minidev.json.JSONArray;
+import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class AssertionHelper {
@@ -46,6 +49,19 @@ public class AssertionHelper {
         return adyenShopData;
     }
 
+    public ImmutableList.Builder<String> adyenBankAccountDetail(Map adyenNotificationContent) {
+        ImmutableList.Builder<String> adyenShopData = new ImmutableList.Builder<>();
+
+        DocumentContext parse = JsonPath.parse(adyenNotificationContent);
+
+        adyenShopData.add(parse.read("iban").toString());
+        adyenShopData.add(parse.read("bankBicSwift").toString());
+        adyenShopData.add(parse.read("ownerName").toString());
+
+        return adyenShopData;
+    }
+
+
     public ImmutableList.Builder<String> miraklShopShareHolderDataBuilder(MiraklShop miraklShop) {
         ImmutableList.Builder<String> miraklShopData = new ImmutableList.Builder<>();
 
@@ -72,6 +88,18 @@ public class AssertionHelper {
                 }
             }
         }
+        return miraklShopData;
+    }
+
+    public ImmutableList.Builder<String> miraklBankAccountInformation(MiraklShop miraklShop) {
+        ImmutableList.Builder<String> miraklShopData = new ImmutableList.Builder<>();
+
+        MiraklPaymentInformation paymentInformation = miraklShop.getPaymentInformation();
+        if(paymentInformation instanceof MiraklIbanBankAccountInformation){
+            miraklShopData.add(((MiraklIbanBankAccountInformation) paymentInformation).getIban());
+            miraklShopData.add(((MiraklIbanBankAccountInformation) paymentInformation).getBic());
+        }
+        miraklShopData.add(miraklShop.getPaymentInformation().getOwner());
         return miraklShopData;
     }
 

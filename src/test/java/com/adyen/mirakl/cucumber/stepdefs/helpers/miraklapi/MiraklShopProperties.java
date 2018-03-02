@@ -85,20 +85,16 @@ public class MiraklShopProperties {
         String bankName;
         String iban;
         String bic;
-        // here cucumber tests will not be passing in bank information
-        // in this case we will get faker to generate the data for us
-        if (tableData.get("iban") == null || StringUtils.isEmpty(tableData.get("iban").toString())) {
+
+        if (tableData.get("bank name") == null) {
+            log.info("Bank account information will not be created in this test.");
+        } else {
             owner = firstName.concat(" ").concat(lastName);
-            bankName = "RBS";
+            bankName = tableData.get("bank name").toString();
             iban = faker.finance().iban();
             bic = faker.finance().bic();
-        } else {
-            owner = tableData.get("name").toString();
-            bankName = tableData.get("bank name").toString();
-            iban = tableData.get("iban").toString();
-            bic = tableData.get("bic").toString();
+            createShop.setPaymentInformation(miraklIbanBankAccountInformation(owner, bankName, iban, bic));
         }
-        createShop.setPaymentInformation(miraklIbanBankAccountInformation(owner, bankName, iban, bic));
 
         return new MiraklCreateShopsRequest(ImmutableList.of(createShop));
     }
