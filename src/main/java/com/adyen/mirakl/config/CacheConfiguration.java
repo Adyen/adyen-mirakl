@@ -44,6 +44,7 @@ public class CacheConfiguration {
             cm.createCache(com.adyen.mirakl.domain.User.class.getName() + ".authorities", jcacheConfiguration);
             cm.createCache(com.adyen.mirakl.domain.AdyenNotification.class.getName(), jcacheConfiguration);
             cm.createCache(com.adyen.mirakl.domain.MiraklDelta.class.getName(), jcacheConfiguration);
+            cm.createCache(com.adyen.mirakl.domain.MiraklDocumentDelta.class.getName(), jcacheConfiguration);
             // jhipster-needle-ehcache-add-entry
         };
     }
