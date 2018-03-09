@@ -1,0 +1,16 @@
+{
+    "fluentMethods": true,
+    "relationships": [],
+    "fields": [
+        {
+            "fieldName": "documentDelta",
+            "fieldType": "ZonedDateTime"
+        }
+    ],
+    "changelogDate": "20180301162902",
+    "dto": "no",
+    "service": "no",
+    "entityTableName": "mirakl_document_delta",
+    "jpaMetamodelFiltering": false,
+    "pagination": "no"
+}
