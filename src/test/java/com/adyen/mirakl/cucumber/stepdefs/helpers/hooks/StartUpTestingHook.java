@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 import java.time.ZonedDateTime;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @ConfigurationProperties(prefix = "requestbin", ignoreUnknownFields = false)
@@ -99,7 +100,10 @@ public class StartUpTestingHook implements ApplicationListener<ContextRefreshedE
         createNotificationConfigurationRequest.setConfigurationDetails(configurationDetails);
         CreateNotificationConfigurationResponse notificationConfiguration = adyenNotification.createNotificationConfiguration(createNotificationConfigurationRequest);
 
-        Awaitility.await().atMost(Duration.TEN_SECONDS).untilAsserted(() -> {
+        Awaitility.with()
+            .pollDelay(Duration.ONE_MINUTE)
+            .await().atMost(new Duration(110,TimeUnit.SECONDS))
+            .untilAsserted(() -> {
             final GetNotificationConfigurationListResponse all = adyenNotification.getNotificationConfigurationList();
             final boolean found = all.getConfigurations().stream().anyMatch(x -> configurationDetails.getNotifyURL().equals(x.getNotifyURL()));
             Assertions.assertThat(found).isTrue();
