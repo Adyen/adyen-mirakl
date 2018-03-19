@@ -1,8 +1,10 @@
 package com.adyen.mirakl.service;
 
+import com.adyen.mirakl.domain.ShareholderMapping;
 import com.adyen.mirakl.repository.ShareholderMappingRepository;
 import com.adyen.model.Address;
 import com.adyen.model.Name;
+import com.adyen.model.marketpay.GetAccountHolderResponse;
 import com.adyen.model.marketpay.PersonalData;
 import com.adyen.model.marketpay.PhoneNumber;
 import com.adyen.model.marketpay.ShareholderContact;
@@ -13,6 +15,7 @@ import com.mirakl.client.mmp.domain.shop.MiraklShop;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.util.HashMap;
@@ -60,7 +63,7 @@ public class UboService {
      * @param maxUbos number of ubos to be extracted e.g. 4
      * @return share holder contacts to send to adyen
      */
-    public List<ShareholderContact> extractUbos(final MiraklShop shop, Integer maxUbos) {
+    public List<ShareholderContact> extractUbos(final MiraklShop shop, final GetAccountHolderResponse existingAccountHolder, Integer maxUbos) {
         Map<String, String> extractedKeysFromMirakl = shop.getAdditionalFieldValues()
             .stream()
             .filter(MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue.class::isInstance)
@@ -89,7 +92,7 @@ public class UboService {
             //do nothing if mandatory fields are missing
             if (firstName != null && lastName != null && civility != null && email != null) {
                 ShareholderContact shareholderContact = new ShareholderContact();
-                addShareholderCode(shop, uboNumber, shareholderContact);
+                addShareholderCode(shop, uboNumber, shareholderContact, existingAccountHolder);
                 addMandatoryData(civility, firstName, lastName, email, shareholderContact);
                 addPersonalData(uboNumber, dateOfBirth, nationality, idNumber, shareholderContact);
                 addAddressData(uboNumber, houseNumberOrName, street, city, postalCode, country, shareholderContact);
@@ -100,9 +103,27 @@ public class UboService {
         return builder.build();
     }
 
-    private void addShareholderCode(final MiraklShop shop, final Integer uboNumber, final ShareholderContact shareholderContact) {
-        shareholderMappingRepository.findOneByMiraklShopIdAndMiraklUboNumber(shop.getId(), uboNumber)
-            .ifPresent(shareholderMapping -> shareholderContact.setShareholderCode(shareholderMapping.getAdyenShareholderCode()));
+    public List<ShareholderContact> extractUbos(final MiraklShop shop, Integer maxUbos) {
+        return extractUbos(shop, null, maxUbos);
+    }
+
+    private void addShareholderCode(final MiraklShop shop, final Integer uboNumber, final ShareholderContact shareholderContact, final GetAccountHolderResponse existingAccountHolder) {
+        final Optional<ShareholderMapping> mapping = shareholderMappingRepository.findOneByMiraklShopIdAndMiraklUboNumber(shop.getId(), uboNumber);
+        if (!mapping.isPresent() && existingAccountHolder != null && existingAccountHolder.getAccountHolderDetails() != null
+            && existingAccountHolder.getAccountHolderDetails().getBusinessDetails() != null
+            && !CollectionUtils.isEmpty(existingAccountHolder.getAccountHolderDetails().getBusinessDetails().getShareholders())) {
+            final List<ShareholderContact> shareholders = existingAccountHolder.getAccountHolderDetails().getBusinessDetails().getShareholders();
+            if (uboNumber - 1 < shareholders.size()) {
+                final ShareholderMapping shareholderMapping = new ShareholderMapping();
+                final String shareholderCode = shareholders.get(uboNumber - 1).getShareholderCode();
+                shareholderMapping.setAdyenShareholderCode(shareholderCode);
+                shareholderMapping.setMiraklShopId(shop.getId());
+                shareholderMapping.setMiraklUboNumber(uboNumber);
+                shareholderMappingRepository.saveAndFlush(shareholderMapping);
+                shareholderContact.setShareholderCode(shareholderCode);
+            }
+        }
+        mapping.ifPresent(shareholderMapping -> shareholderContact.setShareholderCode(shareholderMapping.getAdyenShareholderCode()));
     }
 
     private void addMandatoryData(final String civility, final String firstName, final String lastName, final String email, final ShareholderContact shareholderContact) {

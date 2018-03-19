@@ -115,8 +115,7 @@ jhipster:
 # ===================================================================
 
 application:
-    shopUpdaterCron: "0 */5 * * * ?"
-    docsUpdaterCron: "0 */5 * * * ?"
+    miraklPullCron: "0 */1 * * * ?"
     emailRetryCron: "0 */10 * * * ?"
     removeSentEmailsCron: "0 0 2 * * ?"
     initialDeltaDaysBack: 0

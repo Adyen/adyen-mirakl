@@ -212,7 +212,7 @@ public class ShopService {
         return null;
     }
 
-    private BusinessDetails addBusinessDetailsFromShop(final MiraklShop shop) {
+    private BusinessDetails addBusinessDetailsFromShop(final MiraklShop shop, final GetAccountHolderResponse existingAccountHolder) {
         BusinessDetails businessDetails = new BusinessDetails();
 
         if (shop.getProfessionalInformation() != null) {
@@ -223,8 +223,12 @@ public class ShopService {
                 businessDetails.setTaxId(shop.getProfessionalInformation().getTaxIdentificationNumber());
             }
         }
-        businessDetails.setShareholders(uboService.extractUbos(shop, maxUbos));
+        businessDetails.setShareholders(uboService.extractUbos(shop, existingAccountHolder, maxUbos));
         return businessDetails;
+    }
+
+    private BusinessDetails addBusinessDetailsFromShop(final MiraklShop shop) {
+        return addBusinessDetailsFromShop(shop, null);
     }
 
     private IndividualDetails createIndividualDetailsFromShop(MiraklShop shop) {
@@ -280,7 +284,7 @@ public class ShopService {
     /**
      * Construct updateAccountHolderRequest to Adyen from Mirakl shop
      */
-    protected UpdateAccountHolderRequest updateAccountHolderRequestFromShop(MiraklShop shop, GetAccountHolderResponse getAccountHolderResponse) {
+    protected UpdateAccountHolderRequest updateAccountHolderRequestFromShop(MiraklShop shop, GetAccountHolderResponse existingAccountHolder) {
 
         UpdateAccountHolderRequest updateAccountHolderRequest = new UpdateAccountHolderRequest();
         updateAccountHolderRequest.setAccountHolderCode(shop.getId());
@@ -289,7 +293,7 @@ public class ShopService {
             MiraklIbanBankAccountInformation miraklIbanBankAccountInformation = (MiraklIbanBankAccountInformation) shop.getPaymentInformation();
             if ((! miraklIbanBankAccountInformation.getIban().isEmpty() && shop.getCurrencyIsoCode() != null) &&
                 // if IBAN already exists and is the same then ignore this
-                (! isIbanIdentical(miraklIbanBankAccountInformation.getIban(), getAccountHolderResponse))) {
+                (! isIbanIdentical(miraklIbanBankAccountInformation.getIban(), existingAccountHolder))) {
                 // create AccountHolderDetails
                 AccountHolderDetails accountHolderDetails = new AccountHolderDetails();
                 accountHolderDetails.setBankAccountDetails(setBankAccountDetails(shop));
@@ -299,7 +303,7 @@ public class ShopService {
         }
 
         final AccountHolderDetails accountHolderDetails = Optional.ofNullable(updateAccountHolderRequest.getAccountHolderDetails()).orElseGet(AccountHolderDetails::new);
-        accountHolderDetails.setBusinessDetails(addBusinessDetailsFromShop(shop));
+        accountHolderDetails.setBusinessDetails(addBusinessDetailsFromShop(shop, existingAccountHolder));
         updateAccountHolderRequest.setAccountHolderDetails(accountHolderDetails);
 
         return updateAccountHolderRequest;

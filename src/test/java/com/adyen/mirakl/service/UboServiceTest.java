@@ -4,6 +4,7 @@ import com.adyen.mirakl.domain.ShareholderMapping;
 import com.adyen.mirakl.repository.ShareholderMappingRepository;
 import com.adyen.model.Address;
 import com.adyen.model.Name;
+import com.adyen.model.marketpay.GetAccountHolderResponse;
 import com.adyen.model.marketpay.PersonalData;
 import com.adyen.model.marketpay.PhoneNumber;
 import com.adyen.model.marketpay.ShareholderContact;
@@ -16,6 +17,7 @@ import com.mirakl.client.mmp.domain.shop.MiraklShop;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Answers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -59,6 +61,10 @@ public class UboServiceTest {
     private ShareholderMappingRepository shareholderMappingRepositoryMock;
     @Mock
     private ShareholderMapping shareholderMappingMock1, shareholderMappingMock2, shareholderMappingMock3, shareholderMappingMock4;
+    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
+    private GetAccountHolderResponse existingAccountHolderMock;
+    @Mock
+    private ShareholderContact shareholderMock1, shareholderMock2, shareholderMock3, shareholderMock4;
 
 
     @Test
@@ -147,7 +153,31 @@ public class UboServiceTest {
         Assertions.assertThat(shareholderContact.getShareholderCode()).isNull();
     }
 
+    @Test
+    public void shouldUseMappingFromExistingShop(){
 
+        List<MiraklAdditionalFieldValue> ubo1 = createMiraklAdditionalUboField("1", UBO_FIELDS, UBO_FIELDS_ENUMS);
+        List<MiraklAdditionalFieldValue> ubo2 = createMiraklAdditionalUboField("2", UBO_FIELDS, UBO_FIELDS_ENUMS);
+        List<MiraklAdditionalFieldValue> ubo3 = createMiraklAdditionalUboField("3", UBO_FIELDS, UBO_FIELDS_ENUMS);
+        List<MiraklAdditionalFieldValue> ubo4 = createMiraklAdditionalUboField("4", UBO_FIELDS, UBO_FIELDS_ENUMS);
+        final List<MiraklAdditionalFieldValue> additionalFields = Streams.concat(ubo1.stream(), ubo2.stream(), ubo3.stream(), ubo4.stream()).collect(Collectors.toList());
+        when(miraklShopMock.getAdditionalFieldValues()).thenReturn(additionalFields);
+        when(miraklShopMock.getId()).thenReturn("shopCode");
+        when(shareholderMappingRepositoryMock.findOneByMiraklShopIdAndMiraklUboNumber("shopCode", 1)).thenReturn(Optional.empty());
+        when(shareholderMappingRepositoryMock.findOneByMiraklShopIdAndMiraklUboNumber("shopCode", 2)).thenReturn(Optional.empty());
+        when(shareholderMappingRepositoryMock.findOneByMiraklShopIdAndMiraklUboNumber("shopCode", 3)).thenReturn(Optional.empty());
+        when(shareholderMappingRepositoryMock.findOneByMiraklShopIdAndMiraklUboNumber("shopCode", 4)).thenReturn(Optional.empty());
+
+        when(existingAccountHolderMock.getAccountHolderDetails().getBusinessDetails().getShareholders()).thenReturn(ImmutableList.of(shareholderMock1, shareholderMock2, shareholderMock3, shareholderMock4));
+        when(shareholderMock1.getShareholderCode()).thenReturn("shareholderCode1");
+        when(shareholderMock2.getShareholderCode()).thenReturn("shareholderCode2");
+        when(shareholderMock3.getShareholderCode()).thenReturn("shareholderCode3");
+        when(shareholderMock4.getShareholderCode()).thenReturn("shareholderCode4");
+
+        final List<ShareholderContact> result = uboService.extractUbos(miraklShopMock, existingAccountHolderMock, 4);
+
+        verifyShareHolders(result);
+    }
 
     private void verifyShareHolders(final List<ShareholderContact> shareHolders) {
         final Set<Name.GenderEnum> genders = shareHolders.stream().map(ShareholderContact::getName).map(Name::getGender).collect(Collectors.toSet());

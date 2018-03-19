@@ -188,7 +188,7 @@ public class ShopServiceTest {
         setup(additionalFields);
         when(adyenAccountServiceMock.updateAccountHolder(updateAccountHolderRequestCaptor.capture())).thenReturn(updateAccountHolderResponseMock);
         when(getAccountHolderResponseMock.getAccountHolderCode()).thenReturn("alreadyExisting");
-        when(uboService.extractUbos(any(), Matchers.eq(4))).thenReturn(ImmutableList.of(shareHolderMock1, shareHolderMock2, shareHolderMock3, shareHolderMock4));
+        when(uboService.extractUbos(any(), any(), Matchers.eq(4))).thenReturn(ImmutableList.of(shareHolderMock1, shareHolderMock2, shareHolderMock3, shareHolderMock4));
 
         shopService.processUpdatedShops();
 
@@ -301,7 +301,7 @@ public class ShopServiceTest {
 
         when(adyenAccountServiceMock.createAccountHolder(createAccountHolderRequestCaptor.capture())).thenReturn(createAccountHolderResponseMock);
         when(getAccountHolderResponseMock.getAccountHolderCode()).thenReturn("");
-        when(uboService.extractUbos(any(), Matchers.eq(4))).thenReturn(ImmutableList.of(shareHolderMock1, shareHolderMock2, shareHolderMock3, shareHolderMock4));
+        when(uboService.extractUbos(any(), any(), Matchers.eq(4))).thenReturn(ImmutableList.of(shareHolderMock1, shareHolderMock2, shareHolderMock3, shareHolderMock4));
 
         shopService.processUpdatedShops();
 
