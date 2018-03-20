@@ -9,8 +9,10 @@ Feature: Create payout shops which will be KYC'ed for seller payout tests
 #    PayoutShop01 will have a corresponding PayoutVoucher file in resources directory
 #    PayoutShop02 will be used for failure scenario see ADY-9 failure scenario
 #    UpdateShop01 will be used for the smoketest
+#    UpdateShop02 will be used for scenario ADY-42
 
-    Scenario Outline: Create shops which are KYC for Payout
+#   Individual shops:
+    Scenario Outline: Create shops for Individual sellers
         Given a shop has been created in Mirakl for an Individual with mandatory KYC data
             | companyName   | city   | bank name   | iban   | bankOwnerName   | lastName   |
             | <companyName> | <city> | <bank name> | <iban> | <bankOwnerName> | <lastName> |
@@ -21,3 +23,15 @@ Feature: Create payout shops which will be KYC'ed for seller payout tests
             | PayoutShop01 | PASSED | testBank  | GB26TEST40051512347366 | TestData      | TestData |
             | PayoutShop02 | PASSED | testBank  | GB26TEST40051512347366 | TestData      | TestData |
             | UpdateShop01 | PASSED | testBank  | GB26TEST40051512347366 | TestData      | TestData |
+            | UpdateShop02 | PASSED | testBank  | GB26TEST40051512347366 | TestData      | TestData |
+
+#   Business shops:
+    Scenario Outline: Create test shops for Business sellers
+        Given a new shop has been created in Mirakl with UBO Data for a Business
+            | maxUbos   | lastName | companyName   |
+            | <maxUbos> | TestData | <companyName> |
+        When we process the data and push to Adyen
+        Then a notification will be sent pertaining to ACCOUNT_HOLDER_CREATED
+        Examples:
+            | companyName  | maxUbos |
+            | UpdateShop02 | 4       |

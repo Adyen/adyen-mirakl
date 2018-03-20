@@ -4,7 +4,6 @@ import com.adyen.mirakl.cucumber.stepdefs.helpers.stepshelper.StepDefsHelper;
 import cucumber.api.java.Before;
 import org.awaitility.Awaitility;
 import org.awaitility.Duration;
-import org.testng.annotations.BeforeClass;
 
 public class CucumberHooks extends StepDefsHelper {
 
