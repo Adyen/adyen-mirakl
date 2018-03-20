@@ -2,7 +2,6 @@ package com.adyen.mirakl.cucumber.stepdefs.helpers.miraklapi;
 
 import com.adyen.mirakl.service.UboService;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.mirakl.client.mmp.domain.shop.MiraklProfessionalInformation;
 import com.mirakl.client.mmp.domain.shop.bank.MiraklIbanBankAccountInformation;
 import com.mirakl.client.mmp.domain.shop.create.MiraklCreateShopAddress;
@@ -22,25 +21,17 @@ import javax.annotation.Resource;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
-public class MiraklShopProperties extends AbstractMiraklShopSharedProperties{
-
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
+class MiraklShopProperties extends AbstractMiraklShopSharedProperties{
 
     @Resource
     private UboService uboService;
 
-    private String email = "adyen-mirakl-".concat(UUID.randomUUID().toString()).concat("@mailtrap.com");
+    private final Logger log = LoggerFactory.getLogger(this.getClass());
     private String companyName = FAKER.company().name();
     private String firstName = FAKER.name().firstName();
-    private final Map<Integer, String> CIVILITIES = ImmutableMap.<Integer, String>builder()
-        .put(1, "Mr")
-        .put(2, "Mrs")
-        .put(3, "Miss")
-        .build();
 
-    protected void populatePaymentInformation(List<Map<String, String>> rows, MiraklCreateShop createShop) {
+    void populatePaymentInformation(List<Map<String, String>> rows, MiraklCreateShop createShop) {
 
         rows.forEach(row -> {
             String owner;
@@ -62,17 +53,15 @@ public class MiraklShopProperties extends AbstractMiraklShopSharedProperties{
         });
     }
 
-    protected void populateShareHolderData(String legalEntity, List<Map<String, String>> rows, MiraklCreateShop createShop) {
+    void populateShareHolderData(String legalEntity, List<Map<String, String>> rows, MiraklCreateShop createShop) {
         rows.forEach(row -> {
-            if (row.get("maxUbos") != null) {
+            maxUbos = row.get("maxUbos");
+            if (maxUbos != null) {
                 ImmutableList.Builder<MiraklRequestAdditionalFieldValue> builder = ImmutableList.builder();
-                for (int i = 1; i <= Integer.valueOf(row.get("maxUbos")); i++) {
+                for (int i = 1; i <= Integer.valueOf(maxUbos); i++) {
 
-                    Map<Integer, Map<String, String>> uboKeys = uboService.generateMiraklUboKeys(Integer.valueOf(row.get("maxUbos")));
-                    int randomCivility = ThreadLocalRandom.current().nextInt(1, 4);
-                    String civility = CIVILITIES.get(randomCivility);
-
-                    buildShareHolderMinimumData(builder, i, uboKeys, civility);
+                    Map<Integer, Map<String, String>> uboKeys = uboService.generateMiraklUboKeys(Integer.valueOf(maxUbos));
+                    buildShareHolderMinimumData(builder, i, uboKeys, civility());
                     builder.add(createAdditionalField(uboKeys.get(i).get(UboService.COUNTRY), "GB"));
                     builder.add(createAdditionalField(uboKeys.get(i).get(UboService.HOUSE_NUMBER_OR_NAME), FAKER.address().streetAddressNumber()));
                     builder.add(createAdditionalField(uboKeys.get(i).get(UboService.STREET), FAKER.address().streetName()));
@@ -96,17 +85,16 @@ public class MiraklShopProperties extends AbstractMiraklShopSharedProperties{
         return formatter.parseDateTime(dob);
     }
 
-    protected void populateShareholderWithMissingData(String legalEntity, List<Map<String, String>> rows, MiraklCreateShop createShop) {
+    void populateShareholderWithMissingData(String legalEntity, List<Map<String, String>> rows, MiraklCreateShop createShop) {
         rows.forEach(row -> {
-            if (row.get("maxUbos") != null) {
+            maxUbos = row.get(maxUbos);
+            if (maxUbos != null) {
                 ImmutableList.Builder<MiraklRequestAdditionalFieldValue> builder = ImmutableList.builder();
-                for (int i = 1; i <= Integer.valueOf(row.get("maxUbos")); i++) {
+                Map<Integer, Map<String, String>> uboKeys = uboService.generateMiraklUboKeys(Integer.valueOf(maxUbos));
 
-                    Map<Integer, Map<String, String>> uboKeys = uboService.generateMiraklUboKeys(Integer.valueOf(row.get("maxUbos")));
-                    int randomCivility = ThreadLocalRandom.current().nextInt(1, 4);
-                    String civility = CIVILITIES.get(randomCivility);
+                for (int i = 1; i <= Integer.valueOf(maxUbos); i++) {
 
-                    buildShareHolderMinimumData(builder, i, uboKeys, civility);
+                    buildShareHolderMinimumData(builder, i, uboKeys, civility());
                 }
                 builder.add(createAdditionalField("adyen-legal-entity-type", legalEntity));
                 createShop.setAdditionalFieldValues(builder.build());
@@ -114,14 +102,7 @@ public class MiraklShopProperties extends AbstractMiraklShopSharedProperties{
         });
     }
 
-    private void buildShareHolderMinimumData(ImmutableList.Builder<MiraklRequestAdditionalFieldValue> builder, int i, Map<Integer, Map<String, String>> uboKeys, String civility) {
-        builder.add(createAdditionalField(uboKeys.get(i).get(UboService.CIVILITY), civility));
-        builder.add(createAdditionalField(uboKeys.get(i).get(UboService.FIRSTNAME), FAKER.name().firstName()));
-        builder.add(createAdditionalField(uboKeys.get(i).get(UboService.LASTNAME), FAKER.name().lastName()));
-        builder.add(createAdditionalField(uboKeys.get(i).get(UboService.EMAIL), email));
-    }
-
-    protected void populateAddFieldsLegalAndHouseNumber(String legalEntity, MiraklCreateShop createShop) {
+    void populateAddFieldsLegalAndHouseNumber(String legalEntity, MiraklCreateShop createShop) {
 
         createShop.setAdditionalFieldValues(ImmutableList.of(
             createAdditionalField("adyen-individual-housenumber", FAKER.address().streetAddressNumber()),
@@ -131,7 +112,7 @@ public class MiraklShopProperties extends AbstractMiraklShopSharedProperties{
         ));
     }
 
-    protected void populateUserEmailAndShopName(MiraklCreateShop createShop, List<Map<String, String>> rows) {
+    void populateUserEmailAndShopName(MiraklCreateShop createShop, List<Map<String, String>> rows) {
 
         String shopName;
         if (rows.get(0).get("companyName") == null) {
@@ -150,7 +131,7 @@ public class MiraklShopProperties extends AbstractMiraklShopSharedProperties{
         createShop.setName(shopName);
     }
 
-    protected void populateMiraklProfessionalInformation(MiraklCreateShop createShop) {
+    void populateMiraklProfessionalInformation(MiraklCreateShop createShop) {
         createShop.setProfessional(true);
         MiraklProfessionalInformation professionalInformation = new MiraklProfessionalInformation();
         professionalInformation.setCorporateName(companyName);
@@ -158,7 +139,7 @@ public class MiraklShopProperties extends AbstractMiraklShopSharedProperties{
         createShop.setProfessionalInformation(professionalInformation);
     }
 
-    protected void populateMiraklAddress(List<Map<String, String>> rows, MiraklCreateShop createShop) {
+    void populateMiraklAddress(List<Map<String, String>> rows, MiraklCreateShop createShop) {
         rows.forEach(row -> {
             String city;
 
@@ -180,7 +161,7 @@ public class MiraklShopProperties extends AbstractMiraklShopSharedProperties{
         });
     }
 
-    protected void throwErrorIfShopIsNotCreated(MiraklCreatedShops shops) {
+    void throwErrorIfShopIsNotCreated(MiraklCreatedShops shops) {
         MiraklCreatedShopReturn miraklCreatedShopReturn = shops.getShopReturns()
             .stream()
             .findAny()
@@ -193,7 +174,7 @@ public class MiraklShopProperties extends AbstractMiraklShopSharedProperties{
         log.info(String.format("Mirakl Shop Id: [%s]", shopId));
     }
 
-    protected MiraklIbanBankAccountInformation miraklIbanBankAccountInformation(String owner, String bankName, String iban, String bic, String city) {
+    private MiraklIbanBankAccountInformation miraklIbanBankAccountInformation(String owner, String bankName, String iban, String bic, String city) {
 
         MiraklIbanBankAccountInformation miraklIbanBankAccountInformation = new MiraklIbanBankAccountInformation();
         miraklIbanBankAccountInformation.setOwner(owner);
