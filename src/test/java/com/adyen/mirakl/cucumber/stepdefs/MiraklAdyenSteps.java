@@ -24,6 +24,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -420,6 +421,15 @@ public class MiraklAdyenSteps extends StepDefsHelper {
         );
     }
 
+    @Test(enabled = false)
+    @Given("^a shop exists in Mirakl$")
+    public void updateShopExistsInMirakl(DataTable table) {
+        List<Map<Object, Object>> rows = table.getTableConverter().toMaps(table, String.class, String.class);
+
+        String seller = shopConfiguration.shopIds.get(rows.get(0).get("seller").toString()).toString();
+        shop = getMiraklShop(miraklMarketplacePlatformOperatorApiClient, seller);
+    }
+
     @Given("^a AccountHolder exists who (?:is not|is) eligible for payout$")
     public void aAccountHolderExistsWhoHasPassedKYCChecksAndIsEligibleForPayout(DataTable table) throws Throwable {
         List<Map<String, String>> cucumberTable = table.getTableConverter().toMaps(table, String.class, String.class);
@@ -462,5 +472,11 @@ public class MiraklAdyenSteps extends StepDefsHelper {
                     .isEqualTo(content.read("status.statusCode"));
             });
         });
+    }
+
+    @When("^the Mirakl Shop Details have been updated with invalid data$")
+    public void theMiraklShopDetailsHaveBeenUpdatedWithInvalidData(DataTable table) {
+        List<Map<String, String>> cucumberTable = table.getTableConverter().toMaps(table, String.class, String.class);
+            shop = miraklUpdateShopApi.updateUboDataWithInvalidData(shop, shop.getId(), miraklMarketplacePlatformOperatorApiClient, cucumberTable);
     }
 }
