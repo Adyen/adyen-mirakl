@@ -23,7 +23,7 @@ Feature: Seller Account Management
             | maxUbos |
             | 4       |
 
-    @ADY-53 @ADY-91
+    @ADY-53 @ADY-91 @ADY-104 @bug
     Scenario: Creating new shop as Business with 1 shareholder and updating shop with 3 shareholder details
         Given a new shop has been created in Mirakl with UBO Data for a Business
             | maxUbos | lastName |

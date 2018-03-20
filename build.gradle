@@ -102,10 +102,11 @@ test {
 }
 
 task cucumberTest(type: Test) {
+    useTestNG() {
+        suiteXmlFiles << new File(rootDir, "/src/test/resources/testng/testng.xml")
+    }
     description = "Execute cucumber BDD tests."
     group = "verification"
-    include '**/CucumberTest*'
-
     // uncomment if the tests reports are not generated
     // see https://github.com/jhipster/generator-jhipster/pull/2771 and https://github.com/jhipster/generator-jhipster/pull/4484
     // ignoreFailures true
@@ -245,12 +246,13 @@ dependencies {
     testCompile ("com.github.javafaker:javafaker:0.14") {
             exclude group: 'org.yaml', module: 'snakeyaml'
         }
+    testCompile group: 'info.cukes', name: 'cucumber-testng', version: '1.2.5'
     optional ("org.springframework.boot:spring-boot-configuration-processor") {
         exclude group: 'com.vaadin.external.google', module: 'android-json'
     }
     //jhipster-needle-gradle-dependency - JHipster will add additional dependencies here
 
-    compile "com.adyen:adyen-java-api-library:1.4.marketplace.beta"
+    compile "com.adyen:adyen-java-api-library:1.4.marketplace.beta.2"
     compile "com.mirakl:mmp-sdk-operator:3.25.19"
     testCompile "com.mirakl:mmp-sdk-front:3.25.19"
 }

@@ -1,5 +1,6 @@
 package com.adyen.mirakl.cucumber.stepdefs.helpers.miraklapi;
 
+import com.adyen.mirakl.service.UboService;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import com.mirakl.client.domain.common.error.ErrorBean;
@@ -21,46 +22,66 @@ import com.mirakl.client.mmp.request.shop.document.MiraklUploadShopDocumentsRequ
 import org.apache.commons.lang3.RandomStringUtils;
 import org.assertj.core.api.Assertions;
 
+import javax.annotation.Resource;
 import java.io.File;
 import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class MiraklUpdateShopProperties extends AbstractMiraklShopSharedProperties {
+class MiraklUpdateShopProperties extends AbstractMiraklShopSharedProperties {
 
-    protected ImmutableList.Builder<MiraklSimpleRequestAdditionalFieldValue> addMiraklShopUbos(List<Map<String, String>> rows) {
+    @Resource
+    private UboService uboService;
+
+    ImmutableList.Builder<MiraklSimpleRequestAdditionalFieldValue> addMiraklShopUbos(List<Map<String, String>> rows) {
 
         ImmutableList.Builder<MiraklSimpleRequestAdditionalFieldValue> builder = ImmutableList.builder();
         rows.forEach(row -> {
-            if (row.get("maxUbos") != null) {
+            maxUbos = row.get("maxUbos");
+            Map<Integer, Map<String, String>> uboKeys = uboService.generateMiraklUboKeys(4);
+            if (maxUbos != null) {
                 /* adding more ubos to a shop is dictated by the number of UBOs to update (as defined in Cucumber table)
                  example:- 3 UBOs to add. (4 - 3) + 1 = 2
                  so the method will start at UBO 2 until 4*/
-                int noOfUbos = Integer.valueOf(row.get("maxUbos"));
+                int noOfUbos = Integer.valueOf(maxUbos);
                 for (noOfUbos = (4 - noOfUbos) + 1; noOfUbos <= 4; noOfUbos++) {
-                    builder.add(createAdditionalField("adyen-ubo" + noOfUbos + "-civility", "Mr"));
-                    builder.add(createAdditionalField("adyen-ubo" + noOfUbos + "-firstname", FAKER.name().firstName()));
-                    builder.add(createAdditionalField("adyen-ubo" + noOfUbos + "-lastname", FAKER.name().lastName()));
-                    builder.add(createAdditionalField("adyen-ubo" + noOfUbos + "-email", "adyen-mirakl" + UUID.randomUUID() + "@mailtrap.com"));
+                    builder.add(createAdditionalField(uboKeys.get(noOfUbos).get(UboService.CIVILITY), civility()));
+                    builder.add(createAdditionalField(uboKeys.get(noOfUbos).get(UboService.FIRSTNAME), FAKER.name().firstName()));
+                    builder.add(createAdditionalField(uboKeys.get(noOfUbos).get(UboService.LASTNAME), FAKER.name().lastName()));
+                    builder.add(createAdditionalField(uboKeys.get(noOfUbos).get(UboService.EMAIL), email));
                 }
             }
         });
         return builder;
     }
 
-    protected ImmutableList.Builder<MiraklSimpleRequestAdditionalFieldValue> updateMiraklShopUbos(List<Map<String, String>> rows) {
+    ImmutableList.Builder<MiraklSimpleRequestAdditionalFieldValue> updateMiraklShopUbos(List<Map<String, String>> rows) {
         ImmutableList.Builder<MiraklSimpleRequestAdditionalFieldValue> builder = ImmutableList.builder();
         rows.forEach(row -> {
-            for (int i = Integer.valueOf(row.get("UBO")); i <= 4; i++) {
-                builder.add(createAdditionalField("adyen-ubo" + i + "-firstname", row.get("firstName")));
-                builder.add(createAdditionalField("adyen-ubo" + i + "-lastname", row.get("lastName")));
-                builder.add(createAdditionalField("adyen-ubo" + i + "-email", "adyen-mirakl" + UUID.randomUUID() + "@mailtrap.com"));
-            }
+            maxUbos = row.get("UBO");
+            int ubo = Integer.valueOf(maxUbos);
+            Map<Integer, Map<String, String>> uboKeys = uboService.generateMiraklUboKeys(Integer.valueOf(maxUbos));
+            builder.add(createAdditionalField(uboKeys.get(ubo).get(UboService.FIRSTNAME), row.get("firstName")));
+            builder.add(createAdditionalField(uboKeys.get(ubo).get(UboService.LASTNAME), row.get("lastName")));
+            builder.add(createAdditionalField(uboKeys.get(ubo).get(UboService.EMAIL), "adyen-mirakl" + UUID.randomUUID() + "@mailtrap.com"));
+
         });
         return builder;
     }
 
-    protected MiraklProfessionalInformation updateMiraklShopTaxId(MiraklShop miraklShop) {
+    ImmutableList.Builder<MiraklSimpleRequestAdditionalFieldValue> updateMiraklShopUbosWithInvalidData(List<Map<String, String>> rows) {
+        ImmutableList.Builder<MiraklSimpleRequestAdditionalFieldValue> builder = ImmutableList.builder();
+        rows.forEach(row -> {
+            maxUbos = row.get("UBO");
+            int ubo = Integer.valueOf(maxUbos);
+            Map<Integer, Map<String, String>> uboKeys = uboService.generateMiraklUboKeys(Integer.valueOf(maxUbos));
+            builder.add(createAdditionalField(uboKeys.get(ubo).get(UboService.FIRSTNAME),UUID.randomUUID().toString() ));
+            builder.add(createAdditionalField(uboKeys.get(ubo).get(UboService.LASTNAME), UUID.randomUUID().toString()));
+        });
+        return builder;
+    }
+
+    MiraklProfessionalInformation updateMiraklShopTaxId(MiraklShop miraklShop) {
         MiraklProfessionalInformation miraklProfessionalInformation = new MiraklProfessionalInformation();
         miraklProfessionalInformation.setTaxIdentificationNumber("GB" + RandomStringUtils.randomNumeric(9));
         miraklProfessionalInformation.setIdentificationNumber(miraklShop.getProfessionalInformation().getIdentificationNumber());
@@ -68,7 +89,7 @@ public class MiraklUpdateShopProperties extends AbstractMiraklShopSharedProperti
         return miraklProfessionalInformation;
     }
 
-    protected MiraklUploadShopDocumentsRequest uploadMiraklShopWithBankStatement(String shopId) {
+    MiraklUploadShopDocumentsRequest uploadMiraklShopWithBankStatement(String shopId) {
         ImmutableList.Builder<MiraklUploadDocument> docUploadRequestBuilder = new ImmutableList.Builder<>();
 
         URL url = Resources.getResource("fileuploads/BankStatement.jpg");
@@ -83,7 +104,7 @@ public class MiraklUpdateShopProperties extends AbstractMiraklShopSharedProperti
         return miraklUploadShopDocumentsRequest(shopId, docUploadRequestBuilder.build());
     }
 
-    protected MiraklIbanBankAccountInformation updateNewMiraklIbanOnly(MiraklShop miraklShop, List<Map<String, String>> rows) {
+    MiraklIbanBankAccountInformation updateNewMiraklIbanOnly(MiraklShop miraklShop, List<Map<String, String>> rows) {
         MiraklIbanBankAccountInformation paymentInformation = new MiraklIbanBankAccountInformation();
         MiraklPaymentInformation miraklPaymentInformation = miraklShop.getPaymentInformation();
         if (miraklPaymentInformation instanceof MiraklIbanBankAccountInformation) {
@@ -95,7 +116,7 @@ public class MiraklUpdateShopProperties extends AbstractMiraklShopSharedProperti
         return paymentInformation;
     }
 
-    protected MiraklShopAddress updateMiraklShopAddress(MiraklShop miraklShop, Map<String, String> row) {
+    MiraklShopAddress updateMiraklShopAddress(MiraklShop miraklShop, Map<String, String> row) {
         MiraklShopAddress address = new MiraklShopAddress();
 
         address.setCity(row.get("city"));
@@ -110,8 +131,8 @@ public class MiraklUpdateShopProperties extends AbstractMiraklShopSharedProperti
     }
 
     // Mandatory for shop update
-    protected void populateMiraklShopPremiumSuspendAndPaymentBlockedStatus(MiraklShop miraklShop,
-                                                                           MiraklUpdateShop miraklUpdateShop) {
+    void populateMiraklShopPremiumSuspendAndPaymentBlockedStatus(MiraklShop miraklShop,
+                                                                 MiraklUpdateShop miraklUpdateShop) {
 
         // will keep setSuspend false unless returned enum = SUSPEND
         boolean setSuspend;
@@ -123,7 +144,7 @@ public class MiraklUpdateShopProperties extends AbstractMiraklShopSharedProperti
         miraklUpdateShop.setPremiumState(miraklShop.getPremiumState());
     }
 
-    protected void populateMiraklChannel(MiraklShop miraklShop, MiraklUpdateShop miraklUpdateShop) {
+    void populateMiraklChannel(MiraklShop miraklShop, MiraklUpdateShop miraklUpdateShop) {
         // gets the sales channel code, if multiple found then immutable list should handle
         ImmutableList.Builder<String> channelsBuilder = new ImmutableList.Builder<>();
         for (String channel : miraklShop.getChannels()) {
@@ -133,13 +154,13 @@ public class MiraklUpdateShopProperties extends AbstractMiraklShopSharedProperti
     }
 
     // Mandatory for shop update
-    protected void populateShopNameAndEmail(MiraklShop miraklShop, MiraklUpdateShop miraklUpdateShop) {
+    void populateShopNameAndEmail(MiraklShop miraklShop, MiraklUpdateShop miraklUpdateShop) {
         miraklUpdateShop.setName(miraklShop.getName());
         miraklUpdateShop.setEmail(miraklShop.getContactInformation().getEmail());
     }
 
     // Mandatory for shop update
-    protected MiraklShopAddress populateMiraklShopAddress(MiraklShop miraklShop) {
+    MiraklShopAddress populateMiraklShopAddress(MiraklShop miraklShop) {
         MiraklShopAddress address = new MiraklShopAddress();
 
         address.setCity(miraklShop.getContactInformation().getCity());
@@ -154,7 +175,7 @@ public class MiraklUpdateShopProperties extends AbstractMiraklShopSharedProperti
     }
 
     // Mandatory for shop update
-    protected MiraklIbanBankAccountInformation populateMiraklIbanBankAccountInformation(MiraklShop miraklShop) {
+    MiraklIbanBankAccountInformation populateMiraklIbanBankAccountInformation(MiraklShop miraklShop) {
         MiraklIbanBankAccountInformation paymentInformation = new MiraklIbanBankAccountInformation();
 
         //update requires bank details for some reason
@@ -177,8 +198,8 @@ public class MiraklUpdateShopProperties extends AbstractMiraklShopSharedProperti
         return paymentInformation;
     }
 
-    protected void populateMiraklAdditionalFields(MiraklUpdateShop miraklUpdateShop, MiraklShop miraklShop,
-                                                  ImmutableList<MiraklSimpleRequestAdditionalFieldValue> fieldsToUpdate) {
+    void populateMiraklAdditionalFields(MiraklUpdateShop miraklUpdateShop, MiraklShop miraklShop,
+                                        ImmutableList<MiraklSimpleRequestAdditionalFieldValue> fieldsToUpdate) {
 
         final List<MiraklAdditionalFieldValue> addFields = new LinkedList<>(miraklShop.getAdditionalFieldValues());
         final ImmutableList.Builder<MiraklRequestAdditionalFieldValue> updatedFields = new ImmutableList.Builder<>();
@@ -191,10 +212,10 @@ public class MiraklUpdateShopProperties extends AbstractMiraklShopSharedProperti
 
             // if fields are present then update them
             // else create them
-            if(additionalField.isPresent()){
+            if (additionalField.isPresent()) {
                 MiraklAdditionalFieldValue.MiraklStringAdditionalFieldValue field = additionalField.get();
                 field.setValue(additionalFieldVal.getValue());
-            }else {
+            } else {
                 updatedFields.add(additionalFieldVal);
             }
         }
@@ -217,7 +238,7 @@ public class MiraklUpdateShopProperties extends AbstractMiraklShopSharedProperti
         miraklUpdateShop.setAdditionalFieldValues(updatedFields.build());
     }
 
-    protected void throwErrorIfShopFailedToUpdate(MiraklUpdatedShops miraklUpdatedShopsResponse) {
+    void throwErrorIfShopFailedToUpdate(MiraklUpdatedShops miraklUpdatedShopsResponse) {
         final List<Set<ErrorBean>> errors = miraklUpdatedShopsResponse.getShopReturns().stream()
             .map(MiraklUpdatedShopReturn::getShopError)
             .filter(Objects::nonNull)
