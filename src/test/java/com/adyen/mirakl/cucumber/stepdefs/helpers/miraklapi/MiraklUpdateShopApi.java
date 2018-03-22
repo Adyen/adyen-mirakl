@@ -1,6 +1,7 @@
 package com.adyen.mirakl.cucumber.stepdefs.helpers.miraklapi;
 
 import com.google.common.collect.ImmutableList;
+import com.mirakl.client.mmp.domain.common.document.MiraklDocumentsUploadResult;
 import com.mirakl.client.mmp.domain.shop.MiraklProfessionalInformation;
 import com.mirakl.client.mmp.domain.shop.MiraklShop;
 import com.mirakl.client.mmp.domain.shop.MiraklShopAddress;
@@ -24,6 +25,16 @@ public class MiraklUpdateShopApi extends MiraklUpdateShopProperties {
         ImmutableList.Builder<MiraklUpdateShop> builder = new ImmutableList.Builder<>();
         builder.add(miraklUpdateShop);
         return builder;
+    }
+
+    public MiraklShop updateShopWithPhotoIdForShareHolder(MiraklShop miraklShop, String shopId, MiraklMarketplacePlatformOperatorApiClient client, List<Map<String, String>> rows) {
+        MiraklUpdateShop miraklUpdateShop = new MiraklUpdateShop();
+        miraklUpdateShop = populateAllMandatoryFields(miraklShop, shopId, miraklUpdateShop);
+        // add photo id for shareholder
+        ImmutableList.Builder<MiraklSimpleRequestAdditionalFieldValue> additionalPhotoType = updateShopPhotoTypeBuilder(rows);
+        populateMiraklAdditionalFields(miraklUpdateShop, miraklShop, additionalPhotoType.build());
+        ImmutableList.Builder<MiraklUpdateShop> miraklUpdateShopBuilder = miraklUpdateShopBuilder(miraklUpdateShop);
+        return updateMiraklRequest(client, miraklUpdateShopBuilder);
     }
 
     public MiraklShop addMoreUbosToShop(MiraklShop miraklShop, String shopId, MiraklMarketplacePlatformOperatorApiClient client, List<Map<String, String>> rows) {
@@ -118,7 +129,17 @@ public class MiraklUpdateShopApi extends MiraklUpdateShopProperties {
         miraklUpdateShopBuilder(miraklUpdateShop);
         // upload bankStatement
         MiraklUploadShopDocumentsRequest miraklUploadShopDocumentsRequest = uploadMiraklShopWithBankStatement(shopId);
-        client.uploadShopDocuments(miraklUploadShopDocumentsRequest);
+        MiraklDocumentsUploadResult uploadResult = client.uploadShopDocuments(miraklUploadShopDocumentsRequest);
+        throwDocumentUploadError(uploadResult);
+    }
+
+    public void uploadIdentityDocumentToExistingShop(String shopId, MiraklMarketplacePlatformOperatorApiClient client, List<Map<String, String>> rows) {
+        MiraklUpdateShop miraklUpdateShop = new MiraklUpdateShop();
+        miraklUpdateShopBuilder(miraklUpdateShop);
+        // upload identity document
+        MiraklUploadShopDocumentsRequest miraklUploadShopDocumentsRequest = uploadMiraklShopWithIdentityDoc(shopId, rows);
+        MiraklDocumentsUploadResult uploadResult = client.uploadShopDocuments(miraklUploadShopDocumentsRequest);
+        throwDocumentUploadError(uploadResult);
     }
 
     // required for any update we do to Mirakl

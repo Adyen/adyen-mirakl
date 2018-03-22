@@ -6,6 +6,7 @@ import com.google.common.io.Resources;
 import com.mirakl.client.domain.common.error.ErrorBean;
 import com.mirakl.client.domain.common.error.InputWithErrors;
 import com.mirakl.client.mmp.domain.common.MiraklAdditionalFieldValue;
+import com.mirakl.client.mmp.domain.common.document.MiraklDocumentsUploadResult;
 import com.mirakl.client.mmp.domain.shop.MiraklProfessionalInformation;
 import com.mirakl.client.mmp.domain.shop.MiraklShop;
 import com.mirakl.client.mmp.domain.shop.MiraklShopAddress;
@@ -33,8 +34,19 @@ class MiraklUpdateShopProperties extends AbstractMiraklShopSharedProperties {
     @Resource
     private UboService uboService;
 
-    ImmutableList.Builder<MiraklSimpleRequestAdditionalFieldValue> addMiraklShopUbos(List<Map<String, String>> rows) {
+    ImmutableList.Builder<MiraklSimpleRequestAdditionalFieldValue> updateShopPhotoTypeBuilder(List<Map<String, String>> rows) {
+        ImmutableList.Builder<MiraklSimpleRequestAdditionalFieldValue> builder = ImmutableList.builder();
+        rows.forEach(row -> {
+            maxUbos = row.get("UBO");
+            int ubo = Integer.valueOf(maxUbos);
+            Map<Integer, Map<String, String>> uboKeys = uboService.generateMiraklUboKeys(Integer.valueOf(maxUbos));
+            builder.add(createAdditionalField(uboKeys.get(ubo).get(UboService.ID_NUMBER), UUID.randomUUID().toString()));
+            builder.add(createAdditionalField("adyen-ubo" + maxUbos + "-photoidtype", row.get("photoIdType")));
+        });
+        return builder;
+    }
 
+    ImmutableList.Builder<MiraklSimpleRequestAdditionalFieldValue> addMiraklShopUbos(List<Map<String, String>> rows) {
         ImmutableList.Builder<MiraklSimpleRequestAdditionalFieldValue> builder = ImmutableList.builder();
         rows.forEach(row -> {
             maxUbos = row.get("maxUbos");
@@ -75,7 +87,7 @@ class MiraklUpdateShopProperties extends AbstractMiraklShopSharedProperties {
             maxUbos = row.get("UBO");
             int ubo = Integer.valueOf(maxUbos);
             Map<Integer, Map<String, String>> uboKeys = uboService.generateMiraklUboKeys(Integer.valueOf(maxUbos));
-            builder.add(createAdditionalField(uboKeys.get(ubo).get(UboService.FIRSTNAME),UUID.randomUUID().toString() ));
+            builder.add(createAdditionalField(uboKeys.get(ubo).get(UboService.FIRSTNAME), UUID.randomUUID().toString()));
             builder.add(createAdditionalField(uboKeys.get(ubo).get(UboService.LASTNAME), UUID.randomUUID().toString()));
         });
         return builder;
@@ -102,6 +114,45 @@ class MiraklUpdateShopProperties extends AbstractMiraklShopSharedProperties {
         docUploadRequestBuilder.add(element);
 
         return miraklUploadShopDocumentsRequest(shopId, docUploadRequestBuilder.build());
+    }
+
+    MiraklUploadShopDocumentsRequest uploadMiraklShopWithIdentityDoc(String shopId, List<Map<String, String>> rows) {
+        ImmutableList.Builder<MiraklUploadDocument> docUploadRequestBuilder = new ImmutableList.Builder<>();
+        rows.forEach(row -> {
+            Integer ubo = Integer.valueOf(row.get("UBO"));
+            // upload back documents only
+            if (row.get("front").isEmpty()) {
+                setFileUploadBackDocument(docUploadRequestBuilder, row, ubo);
+            }
+            // upload front documents only
+            else if (row.get("back").isEmpty()) {
+                setFileUploadFrontDocument(docUploadRequestBuilder, row, ubo);
+            }
+            // upload front and back documents
+            else {
+                setFileUploadFrontDocument(docUploadRequestBuilder, row, ubo);
+                setFileUploadBackDocument(docUploadRequestBuilder, row, ubo);
+            }
+        });
+        return miraklUploadShopDocumentsRequest(shopId, docUploadRequestBuilder.build());
+    }
+
+    private void setFileUploadBackDocument(ImmutableList.Builder<MiraklUploadDocument> builder, Map<String, String> row, Integer ubo) {
+        MiraklUploadDocument element = new MiraklUploadDocument();
+        URL url = Resources.getResource("fileuploads/" + row.get("back"));
+        element.setFile(new File(url.getPath()));
+        element.setFileName(row.get("back"));
+        element.setTypeCode("adyen-ubo" + ubo + "-photoid-rear");
+        builder.add(element);
+    }
+
+    private void setFileUploadFrontDocument(ImmutableList.Builder<MiraklUploadDocument> builder, Map<String, String> row, Integer ubo) {
+        MiraklUploadDocument element = new MiraklUploadDocument();
+        URL url = Resources.getResource("fileuploads/" + row.get("front"));
+        element.setFile(new File(url.getPath()));
+        element.setFileName(row.get("front"));
+        element.setTypeCode("adyen-ubo" + ubo + "-photoid");
+        builder.add(element);
     }
 
     MiraklIbanBankAccountInformation updateNewMiraklIbanOnly(MiraklShop miraklShop, List<Map<String, String>> rows) {
@@ -257,6 +308,13 @@ class MiraklUpdateShopProperties extends AbstractMiraklShopSharedProperties {
             .map(InputWithErrors::getErrors)
             .collect(Collectors.toList());
 
+        Assertions.assertThat(errors.size()).withFailMessage("errors on update: " + GSON.toJson(errors)).isZero();
+    }
+
+    void throwDocumentUploadError(MiraklDocumentsUploadResult uploadResult) {
+        List<Set<ErrorBean>> errors = uploadResult.getDocuments().stream()
+            .map(InputWithErrors::getErrors)
+            .collect(Collectors.toList());
         Assertions.assertThat(errors.size()).withFailMessage("errors on update: " + GSON.toJson(errors)).isZero();
     }
 }

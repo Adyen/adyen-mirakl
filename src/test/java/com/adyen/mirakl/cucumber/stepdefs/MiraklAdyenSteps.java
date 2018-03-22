@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -41,6 +42,7 @@ public class MiraklAdyenSteps extends StepDefsHelper {
     private String accountHolderCode;
     private String accountCode;
     private Scenario scenario;
+    private GetUploadedDocumentsResponse uploadedDocuments;
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
@@ -237,7 +239,7 @@ public class MiraklAdyenSteps extends StepDefsHelper {
         });
     }
 
-    @Then("^adyen will send multiple (.*) notification with (.*) of status (.*)$")
+    @Then("^adyen will send multiple (.*) notifications with (.*) of status (.*)$")
     public void adyenWillSendMultipleACCOUNT_HOLDER_VERIFICATIONNotificationWithIDENTITY_VERIFICATIONOfStatusDATA_PROVIDED(
         String eventType, String verificationType, String verificationStatus, DataTable table) throws Throwable {
         List<Map<String, Integer>> cucumberTable = table.getTableConverter().toMaps(table, String.class, Integer.class);
@@ -262,10 +264,10 @@ public class MiraklAdyenSteps extends StepDefsHelper {
             Assertions.assertThat(notifications).isNotEmpty();
             Assertions.assertThat(notifications.get(0)).hasSize(maxUbos);
 
-            IntStream.rangeClosed(1, maxUbos).forEach(i->{
+            IntStream.rangeClosed(1, maxUbos).forEach(i -> {
                 for (Map<String, Object> notification : notifications) {
                     Assertions
-                        .assertThat(JsonPath.parse(notification.get("content-"+i)).read("verificationStatus").toString())
+                        .assertThat(JsonPath.parse(notification.get("content-" + i)).read("verificationStatus").toString())
                         .isEqualTo(verificationStatus);
                 }
             });
@@ -500,5 +502,80 @@ public class MiraklAdyenSteps extends StepDefsHelper {
     public void theMiraklShopDetailsHaveBeenUpdatedWithInvalidData(DataTable table) {
         List<Map<String, String>> cucumberTable = table.getTableConverter().toMaps(table, String.class, String.class);
         shop = miraklUpdateShopApi.updateUboDataWithInvalidData(shop, shop.getId(), miraklMarketplacePlatformOperatorApiClient, cucumberTable);
+    }
+
+    @When("^the seller uploads a document in Mirakl$")
+    public void theSellerUploadsADocumentInMirakl(DataTable table) {
+        List<Map<String, String>> cucumberTable = table.getTableConverter().toMaps(table, String.class, String.class);
+        miraklUpdateShopApi.uploadIdentityDocumentToExistingShop(shop.getId(), miraklMarketplacePlatformOperatorApiClient, cucumberTable);
+    }
+
+    @And("^sets the photoIdType in Mirakl$")
+    public void setsThePhotoidtypeToPASSPORT(DataTable table) {
+        List<Map<String, String>> cucumberTable = table.getTableConverter().toMaps(table, String.class, String.class);
+        miraklUpdateShopApi.updateShopWithPhotoIdForShareHolder(shop, shop.getId(), miraklMarketplacePlatformOperatorApiClient, cucumberTable);
+    }
+
+    @Then("^the documents are successfully uploaded to Adyen$")
+    public void theDocumentsAreSuccessfullyUploadedToAdyen(DataTable table) throws Throwable {
+        List<Map<String, String>> cucumberTable = table.getTableConverter().toMaps(table, String.class, String.class);
+
+        GetUploadedDocumentsRequest getUploadedDocumentsRequest = new GetUploadedDocumentsRequest();
+        getUploadedDocumentsRequest.setAccountHolderCode(shop.getId());
+        uploadedDocuments = adyenAccountService.getUploadedDocuments(getUploadedDocumentsRequest);
+
+        ArrayList<DocumentDetail> documentDetails = new ArrayList<>(uploadedDocuments.getDocumentDetails());
+
+        for (Map<String, String> stringStringMap : cucumberTable) {
+            String documentType = stringStringMap.get("documentType");
+            String filename = stringStringMap.get("filename");
+            boolean fileMatch = documentDetails.stream()
+                .anyMatch(detail ->
+                    documentType.equals(DocumentDetail.DocumentTypeEnum.valueOf(documentType).toString())
+                        && detail.getFilename().equals(filename));
+            Assertions
+                .assertThat(fileMatch)
+                .withFailMessage(String.format("Document upload response:[%s]", JsonPath.parse(uploadedDocuments).toString()))
+                .isTrue();
+        }
+    }
+
+    @And("^the following document will not be uploaded to Adyen$")
+    public void theFollowingDocumentWillNotBeUploadedToAdyen(DataTable table) {
+        List<Map<String, String>> cucumberTable = table.getTableConverter().toMaps(table, String.class, String.class);
+
+        cucumberTable.forEach(row -> {
+            String documentType = row.get("documentType");
+            String filename = row.get("filename");
+
+            boolean documentTypeAndFilenameMatch = uploadedDocuments.getDocumentDetails().stream()
+                .anyMatch(doc ->
+                    DocumentDetail.DocumentTypeEnum.valueOf(documentType).equals(doc.getDocumentType())
+                        && filename.equals(doc.getFilename())
+                );
+            Assertions
+                .assertThat(documentTypeAndFilenameMatch)
+                .withFailMessage(String.format("Document upload response:[%s]", JsonPath.parse(uploadedDocuments).toString()))
+                .isFalse();
+        });
+    }
+
+    @Then("^the updated documents are successfully uploaded to Adyen$")
+    public void theUpdatedDocumentsAreSuccessfullyUploadedToAdyen(DataTable table) {
+        List<Map<String, String>> cucumberTable = table.getTableConverter().toMaps(table, String.class, String.class);
+        cucumberTable.forEach(row -> {
+            String documentType = row.get("documentType");
+            String filename = row.get("filename");
+
+            List<DocumentDetail> documents = uploadedDocuments.getDocumentDetails().stream()
+                .filter(doc ->
+                    DocumentDetail.DocumentTypeEnum.valueOf(documentType).equals(doc.getDocumentType())
+                        && filename.equals(doc.getFilename()))
+                .collect(Collectors.toList());
+
+            Assertions
+                .assertThat(documents)
+                .hasSize(2);
+        });
     }
 }
