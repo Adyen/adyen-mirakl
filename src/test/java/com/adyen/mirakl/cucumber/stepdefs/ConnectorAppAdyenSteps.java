@@ -14,6 +14,7 @@ import cucumber.api.java.en.When;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -43,8 +44,8 @@ public class ConnectorAppAdyenSteps extends StepDefs {
 
     @When("^a RETRY_LIMIT_REACHED verificationStatus has been sent to the Connector$")
     public void aRETRY_LIMIT_REACHEDVerificationStatusHasBeenSentToTheConnector(String notificationTemplate) throws Throwable {
-        MiraklShop createdShop = (MiraklShop) cucumberMap.get("createdShop");
-        String notification = notificationTemplate.replaceAll("\\$shopId\\$", createdShop.getId());
+        MiraklShop shop = world.miraklShop;
+        String notification = notificationTemplate.replaceAll("\\$shopId\\$", shop.getId());
         restAdyenNotificationMockMvc.perform(post("/api/adyen-notifications")
             .contentType(TestUtil.APPLICATION_JSON_UTF8)
             .content(notification))
@@ -53,8 +54,7 @@ public class ConnectorAppAdyenSteps extends StepDefs {
 
     @And("^the notifications are sent to Connector App$")
     public void theNotificationsAreSentToConnectorApp() throws Exception {
-        List<DocumentContext> notifications = (List<DocumentContext>) cucumberMap.get("notifications");
-        for (DocumentContext notification : notifications) {
+        for (DocumentContext notification : world.notifications) {
             restAdyenNotificationMockMvc.perform(post("/api/adyen-notifications")
                 .contentType(TestUtil.APPLICATION_JSON_UTF8)
                 .content(notification.jsonString()))
@@ -68,8 +68,8 @@ public class ConnectorAppAdyenSteps extends StepDefs {
     public void theIDENTITY_VERIFICATIONNotificationsAreSentToTheConnector() throws Throwable {
         List<String> notifications = new LinkedList<>();
         URL url = Resources.getResource("adyenRequests/CUCUMBER_IDENTITY_VERIFICATION_INVALID_DATA.json");
-        MiraklShop shop = (MiraklShop) cucumberMap.get("createdShop");
-        GetAccountHolderResponse accountHolder = retrieveAccountHolderResponse(shop.getId());
+        MiraklShop shop = world.miraklShop;
+        GetAccountHolderResponse accountHolder = getGetAccountHolderResponse(shop);
         String accountHolderCode = accountHolder.getAccountHolderCode();
 
         List<String> shareholderCodes = accountHolder.getAccountHolderDetails().getBusinessDetails().getShareholders().stream()

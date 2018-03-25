@@ -11,9 +11,4 @@ public class CucumberHooks extends StepDefsHelper {
     public void setDefaultAwaitilityTimeOut() {
         Awaitility.setDefaultTimeout(Duration.FIVE_MINUTES);
     }
-
-    @Before
-    public void clearCucumberMap() {
-        cucumberMap.clear();
-    }
 }

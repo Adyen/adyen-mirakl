@@ -1,9 +1,9 @@
 package com.adyen.mirakl.cucumber.stepdefs.helpers.stepshelper;
 
 import com.adyen.mirakl.config.AdyenAccountConfiguration;
-import com.adyen.mirakl.config.AdyenConfiguration;
 import com.adyen.mirakl.config.MailTrapConfiguration;
 import com.adyen.mirakl.config.ShopConfiguration;
+import com.adyen.mirakl.cucumber.stepdefs.helpers.World;
 import com.adyen.mirakl.cucumber.stepdefs.helpers.hooks.StartUpTestingHook;
 import com.adyen.mirakl.cucumber.stepdefs.helpers.miraklapi.MiraklShopApi;
 import com.adyen.mirakl.cucumber.stepdefs.helpers.miraklapi.MiraklUpdateShopApi;
@@ -19,6 +19,7 @@ import com.adyen.model.marketpay.TransferFundsRequest;
 import com.adyen.model.marketpay.TransferFundsResponse;
 import com.adyen.service.Account;
 import com.adyen.service.Fund;
+import com.jayway.jsonpath.DocumentContext;
 import com.mirakl.client.mmp.domain.shop.MiraklShop;
 import com.mirakl.client.mmp.domain.shop.MiraklShops;
 import com.mirakl.client.mmp.operator.core.MiraklMarketplacePlatformOperatorApiClient;
@@ -27,6 +28,7 @@ import com.mirakl.client.mmp.operator.domain.shop.create.MiraklCreatedShops;
 import com.mirakl.client.mmp.request.shop.MiraklGetShopsRequest;
 import org.assertj.core.api.Assertions;
 import org.awaitility.Duration;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.Resource;
 import java.util.HashMap;
@@ -62,17 +64,17 @@ public class StepDefsHelper {
     @Resource
     protected AdyenAccountConfiguration adyenAccountConfiguration;
     @Resource
-    protected AdyenConfiguration adyenConfiguration;
-    @Resource
     protected MiraklUpdateShopApi miraklUpdateShopApi;
     @Resource
     protected MailTrapConfiguration mailTrapConfiguration;
     @Resource
-    protected Map<String, Object> cucumberMap;
-    @Resource
     protected RetryPayoutService retryPayoutService;
     @Resource
     protected AdyenPayoutErrorRepository adyenPayoutErrorRepository;
+
+    @Autowired
+    protected World world;
+
 
     protected void waitForNotification() {
         await().atMost(new Duration(30, TimeUnit.MINUTES)).untilAsserted(() -> {
@@ -120,12 +122,6 @@ public class StepDefsHelper {
     protected MiraklShop retrieveCreatedShop(MiraklCreatedShops shopForIndividualWithBankDetails) {
         return shopForIndividualWithBankDetails.getShopReturns()
             .stream().map(MiraklCreatedShopReturn::getShopCreated).findFirst().orElse(null);
-    }
-
-    protected GetAccountHolderResponse retrieveAccountHolderResponse(String accountHolderCode) throws Exception {
-        GetAccountHolderRequest request = new GetAccountHolderRequest();
-        request.setAccountHolderCode(accountHolderCode);
-        return adyenConfiguration.adyenAccountService().getAccountHolder(request);
     }
 
     protected TransferFundsResponse transferFundsAndRetrieveResponse(Long transferAmount, Integer sourceAccountCode, Integer destinationAccountCode) throws Exception {

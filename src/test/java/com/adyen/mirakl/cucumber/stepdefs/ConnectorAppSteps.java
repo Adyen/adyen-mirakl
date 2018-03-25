@@ -1,6 +1,7 @@
 package com.adyen.mirakl.cucumber.stepdefs;
 
 import com.adyen.mirakl.cucumber.stepdefs.helpers.stepshelper.StepDefsHelper;
+import com.adyen.mirakl.domain.AdyenPayoutError;
 import com.adyen.mirakl.web.rest.MiraklNotificationsResource;
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
@@ -10,6 +11,7 @@ import cucumber.api.java.Before;
 import cucumber.api.java.en.And;
 import cucumber.api.java.en.Then;
 import cucumber.api.java.en.When;
+import org.assertj.core.api.Assertions;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
@@ -36,13 +38,13 @@ public class ConnectorAppSteps extends StepDefsHelper {
 
     @When("^a payment voucher is sent to the Connector$")
     public void aPaymentVoucherIsSentToAdyen(DataTable table) throws Exception {
-        MiraklShop shop = (MiraklShop)cucumberMap.get("createdShop");
+        MiraklShop miraklShop = world.miraklShop;
         List<Map<String, String>> cucumberTable = table.getTableConverter().toMaps(table, String.class, String.class);
         String paymentVoucher = cucumberTable.get(0).get("paymentVoucher");
-        URL url = Resources.getResource("paymentvouchers/"+paymentVoucher);
+        URL url = Resources.getResource("paymentvouchers/" + paymentVoucher);
         final String csvFile = Resources.toString(url, Charsets.UTF_8);
 
-        String csv = csvFile.replaceAll("\\$shopId\\$", shop.getId());
+        String csv = csvFile.replaceAll("\\$shopId\\$", miraklShop.getId());
 
         MockMultipartFile mockMultipartFile = new MockMultipartFile("file", paymentVoucher, "text/plain", csv.getBytes());
 
@@ -64,5 +66,14 @@ public class ConnectorAppSteps extends StepDefsHelper {
     @Then("^the Connector will trigger payout retry$")
     public void theConnectorWillTriggerPayoutRetry() throws Throwable {
         retryPayoutService.retryFailedPayouts();
+    }
+
+    @And("^the failed payout record is removed from the Connector database$")
+    public void theFailedPayoutRecordIsRemovedFromTheConnectorDatabase() throws Throwable {
+        List<AdyenPayoutError> byAccountHolderCode = adyenPayoutErrorRepository.findByAccountHolderCode(world.miraklShop.getId());
+        Assertions
+            .assertThat(byAccountHolderCode)
+            .isEmpty();
+
     }
 }

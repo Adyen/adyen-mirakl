@@ -79,4 +79,31 @@ public class MiraklShopSteps extends StepDefsHelper {
             Assertions.assertThat(response).isNull();
         });
     }
+
+    @When("^the seller uploads a Bank Statement in Mirakl$")
+    public void theSellerUploadsABankStatementInMirakl() {
+        miraklUpdateShopApi
+            .uploadBankStatementToExistingShop(world.miraklShop.getId(), miraklMarketplacePlatformOperatorApiClient);
+    }
+
+    @When("^the seller uploads a document in Mirakl$")
+    public void theSellerUploadsADocumentInMirakl(DataTable table) {
+        List<Map<String, String>> cucumberTable = table.getTableConverter().toMaps(table, String.class, String.class);
+        miraklUpdateShopApi.uploadIdentityDocumentToExistingShop(world.miraklShop.getId(), miraklMarketplacePlatformOperatorApiClient, cucumberTable);
+    }
+
+    @And("^sets the photoIdType in Mirakl$")
+    public void setsThePhotoidtypeToPASSPORT(DataTable table) {
+        List<Map<String, String>> cucumberTable = table.getTableConverter().toMaps(table, String.class, String.class);
+        miraklUpdateShopApi
+            .updateShopWithPhotoIdForShareHolder(world.miraklShop, world.miraklShop.getId(), miraklMarketplacePlatformOperatorApiClient, cucumberTable);
+    }
+
+    @Given("^a shop exists in Mirakl$")
+    public void updateShopExistsInMirakl(DataTable table) {
+        List<Map<Object, Object>> rows = table.getTableConverter().toMaps(table, String.class, String.class);
+
+        String seller = shopConfiguration.shopIds.get(rows.get(0).get("seller").toString()).toString();
+        world.miraklShop = getMiraklShop(miraklMarketplacePlatformOperatorApiClient, seller);
+    }
 }
