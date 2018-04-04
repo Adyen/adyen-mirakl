@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="'Account Payout Failed'"></title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="shortcut icon" th:href="@{|${baseUrl}/favicon.ico|}" />
+</head>
+<body>
+<p th:text="'Dear operator,'">
+</p>
+<p th:text="|The payout of shop ${miraklShop.contactInformation.civility} ${miraklShop.contactInformation.firstname} ${miraklShop.contactInformation.lastname} failed!|">
+</p>
+
+<p th:text="|The payout failed because of the following error: ${payoutError}|"></p>
+
+<p>
+    <a th:href="|${miraklCallBackShopUrl}|"
+       th:text="|${miraklCallBackShopUrl}|"></a>
+</p>
+<p th:text="'Kind Regards'">
+</p>
+</body>
+</html>

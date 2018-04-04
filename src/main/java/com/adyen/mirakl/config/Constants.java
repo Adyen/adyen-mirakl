@@ -16,6 +16,7 @@ public final class Constants {
 
     public final class Messages {
         public static final String EMAIL_ACCOUNT_HOLDER_VALIDATION_TITLE = "email.account.holder.validation.title";
+        public static final String EMAIL_ACCOUNT_HOLDER_PAYOUT_FAILED_TITLE = "email.account.holder.payout.failed.title";
 
         private Messages() {
         }

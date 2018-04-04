@@ -6,13 +6,14 @@ This page is a quick overview cheatsheet for developers.
 ## Development
 This application was generated using JHipster 4.14.0, you can find documentation and help at [http://www.jhipster.tech/documentation-archive/v4.14.0](http://www.jhipster.tech/documentation-archive/v4.14.0).
 
-Please add environment variables for `MIRAKL_SDK_USER`, `MIRAKL_SDK_PASSWORD`, `MIRAKL_ENV_URL`, `MIRAKL_API_OPERATOR_KEY` and `MIRAKL_API_FRONT_KEY` e.g.
+Please add environment variables for `MIRAKL_SDK_USER`, `MIRAKL_SDK_PASSWORD`, `MIRAKL_ENV_URL`, `MIRAKL_API_OPERATOR_KEY`, `MIRAKL_OPERATOR_EMAIL` and `MIRAKL_API_FRONT_KEY` e.g.
 update `~/.bashrc` with:
 ```
 export MIRAKL_SDK_USER=<user>
 export MIRAKL_SDK_PASSWORD=<pass>
 export MIRAKL_ENV_URL=<miraklEnvUrl>
 export MIRAKL_API_OPERATOR_KEY=<miraklApiOperatorKey>
+export MIRAKL_OPERATOR_EMAIL=<miraklOperatorEmail>
 export MIRAKL_API_FRONT_KEY=<miraklApiFrontKey>
 ```
 
