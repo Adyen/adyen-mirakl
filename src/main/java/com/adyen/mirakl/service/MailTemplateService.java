@@ -1,7 +1,8 @@
 package com.adyen.mirakl.service;
 
 import com.adyen.mirakl.config.Constants;
-import com.adyen.mirakl.service.MailService;
+import com.adyen.mirakl.config.MiraklOperatorConfiguration;
+import com.adyen.model.marketpay.Message;
 import com.adyen.model.marketpay.ShareholderContact;
 import com.mirakl.client.mmp.domain.shop.MiraklShop;
 import io.github.jhipster.config.JHipsterProperties;
@@ -14,6 +15,7 @@ import org.thymeleaf.spring4.SpringTemplateEngine;
 
 import java.util.List;
 import java.util.Locale;
+import javax.annotation.Resource;
 
 @Service
 public class MailTemplateService {
@@ -23,6 +25,7 @@ public class MailTemplateService {
     private static final String BASE_URL = "baseUrl";
     private static final String ERRORS = "errors";
     private static final String SHAREHOLDER = "shareholder";
+    private static final String PAYOUT_ERROR = "payoutError";
 
 
     @Value("${miraklOperator.miraklEnvUrl}")
@@ -34,11 +37,19 @@ public class MailTemplateService {
     private final SpringTemplateEngine templateEngine;
     private final MessageSource messageSource;
 
-    public MailTemplateService(final JHipsterProperties jHipsterProperties, MailService mailService, SpringTemplateEngine templateEngine, MessageSource messageSource) {
+    @Resource
+    private MiraklOperatorConfiguration miraklOperatorConfiguration;
+
+    public MailTemplateService(final JHipsterProperties jHipsterProperties,
+                               MailService mailService,
+                               SpringTemplateEngine templateEngine,
+                               MessageSource messageSource,
+                               MiraklOperatorConfiguration miraklOperatorConfiguration) {
         this.jHipsterProperties = jHipsterProperties;
         this.mailService = mailService;
         this.templateEngine = templateEngine;
         this.messageSource = messageSource;
+        this.miraklOperatorConfiguration = miraklOperatorConfiguration;
     }
 
     @Async
@@ -84,7 +95,19 @@ public class MailTemplateService {
         context.setVariable(ERRORS, errors);
         String content = templateEngine.process("shopNotifications/operatorEmailWithErrors", context);
         String subject = messageSource.getMessage(Constants.Messages.EMAIL_ACCOUNT_HOLDER_VALIDATION_TITLE, null, Locale.getDefault());
-        mailService.sendEmail(miraklShop.getContactInformation().getEmail(), subject, content, false, true);
+        mailService.sendEmail(miraklOperatorConfiguration.getMiraklOperatorEmail(), subject, content, false, true);
+    }
+
+    @Async
+    public void sendOperatorEmailPayoutFailure(MiraklShop miraklShop, Message message) {
+        Context context = new Context(Locale.getDefault());
+        context.setVariable(MIRAKL_SHOP, miraklShop);
+        context.setVariable(MIRAKL_CALL_BACK_SHOP_URL, getMiraklShopUrl(miraklShop.getId()));
+        context.setVariable(BASE_URL, jHipsterProperties.getMail().getBaseUrl());
+        context.setVariable(PAYOUT_ERROR, "(" + message.getCode() + ") " + message.getText());
+        String content = templateEngine.process("shopNotifications/operatorEmailPayoutFailed", context);
+        String subject = messageSource.getMessage(Constants.Messages.EMAIL_ACCOUNT_HOLDER_PAYOUT_FAILED_TITLE, null, Locale.getDefault());
+        mailService.sendEmail(miraklOperatorConfiguration.getMiraklOperatorEmail(), subject, content, false, true);
     }
 
     private String getMiraklShopUrl(String miraklShopId) {
