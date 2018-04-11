@@ -195,7 +195,7 @@ mail.max.retries: 10
 
 mailtrapConfig:
     baseMailTrapUrl: https://mailtrap.io/api/v1/inboxes/
-    mailTrapInboxId: 356812
+    mailTrapInboxId: ${MAIL_TRAP_INBOX_ID}
     apiToken: ${MAILTRAP_API_TOKEN}
 
 payoutService:
