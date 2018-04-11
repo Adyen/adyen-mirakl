@@ -116,16 +116,20 @@ application:
     emailRetryCron: "0 */10 * * * ?"
     removeSentEmailsCron: "0 0 2 * * ?"
     payoutRetryCron: "30 1 * * * ?"
+    retryDocsCron: "0 */1 * * * ?"
     #how many dates back shall be initially used for updated_at Mirakl queries
     initialDeltaDaysBack: 0
     #how many retries can fail for payout
     maxPayoutFailed: 10
     houseNumbersRegex:
         NL: "\\s([a-zA-Z]*\\d+[a-zA-Z]*)$"
+    basicUsername: ${NOTIFY_USERNAME}
+    basicPassword: ${NOTIFY_PASSWORD}
 
 miraklOperator:
     miraklEnvUrl: ${MIRAKL_ENV_URL}
     miraklApiKey: ${MIRAKL_API_OPERATOR_KEY}
+    miraklOperatorEmail: ${MIRAKL_OPERATOR_EMAIL}
 
 adyenConfig:
     userName: ${ADYEN_USER_NAME}
@@ -133,15 +137,14 @@ adyenConfig:
     environment: ${ADYEN_ENV}
     appName: adyen-mirakl-connector
 
-
 adyenNotificationsConfig:
     notificationConfigurationDetails:
         - active: TRUE
           description: ${ADYEN_NOTIFY_URL}
           messageFormat: JSON
           notifyURL: ${ADYEN_NOTIFY_URL}
-          notifyUsername: ${ADYEN_NOTIFY_USERNAME}
-          notifyPassword: ${ADYEN_NOTIFY_PASSWORD}
+          notifyUsername: ${NOTIFY_USERNAME}
+          notifyPassword: ${NOTIFY_PASSWORD}
           sslProtocol: TLSV12
           eventConfigs:
             - eventType: ACCOUNT_CREATED

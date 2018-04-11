@@ -1,17 +1,18 @@
 package com.adyen.mirakl.service;
 
-import java.time.ZonedDateTime;
-import java.util.Date;
-import java.util.Optional;
-import javax.annotation.Resource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 import com.adyen.mirakl.config.ApplicationProperties;
 import com.adyen.mirakl.domain.MiraklDelta;
 import com.adyen.mirakl.domain.MiraklDocumentDelta;
 import com.adyen.mirakl.repository.MiraklDeltaRepository;
 import com.adyen.mirakl.repository.MiraklDocumentDeltaRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+import javax.annotation.Resource;
+import java.time.ZonedDateTime;
+import java.util.Date;
+import java.util.Optional;
 
 @Service
 public class DeltaService {

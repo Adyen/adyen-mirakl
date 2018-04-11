@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="'Transfer funds Failed'"></title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link rel="shortcut icon" th:href="@{|${baseUrl}/favicon.ico|}" />
+</head>
+<body>
+<p th:text="'Dear operator,'">
+</p>
+<p th:text="|The transfer funds from shop ${source} to ${destination} has failed!|">
+</p>
+
+<p th:text="|The transfer funds with amount ${transferFundsAmount} and transferCode ${transferFundsCode} failed because of the following error: ${transferFundsError}|"></p>
+
+
+<p th:text="'Kind Regards'">
+</p>
+</body>
+</html>

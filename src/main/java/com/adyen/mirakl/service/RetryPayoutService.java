@@ -39,7 +39,7 @@ public class RetryPayoutService {
     public void retryFailedPayoutsForAccountHolder(String accountHolderCode) {
         final List<AdyenPayoutError> failedPayouts = adyenPayoutErrorRepository.findByAccountHolderCode(accountHolderCode);
         if (CollectionUtils.isEmpty(failedPayouts)) {
-            log.info("No failed payouts found for this accountHolder with accountHolderCode" + accountHolderCode);
+            log.info("No failed payouts found for this accountHolder with accountHolderCode: " + accountHolderCode);
             return;
         }
         processFailedPayout(failedPayouts);
@@ -78,10 +78,10 @@ public class RetryPayoutService {
                 // remove from database
                 adyenPayoutErrorRepository.delete(adyenPayoutError);
             } catch (ApiException e) {
-                log.error("Failed retry payout exception: " + e.getError(), e);
+                log.error("Failed retry payout exception: {}, {}. For the Shop: {}", e.getError(), e, adyenPayoutError.getAccountHolderCode());
                 updateFailedPayout(adyenPayoutError, payoutAccountHolderResponse, transferFundsResponse);
             } catch (Exception e) {
-                log.error("Failed retry payout exception: " + e.getMessage(), e);
+                log.error("Failed retry payout exception: {}, {}. For the Shop: {}", e.getMessage(), e, adyenPayoutError.getAccountHolderCode());
                 updateFailedPayout(adyenPayoutError, payoutAccountHolderResponse, transferFundsResponse);
             }
         });

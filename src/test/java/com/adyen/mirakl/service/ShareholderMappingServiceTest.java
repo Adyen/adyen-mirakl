@@ -5,6 +5,8 @@ import com.adyen.mirakl.domain.ShareholderMapping;
 import com.adyen.mirakl.repository.ShareholderMappingRepository;
 import com.adyen.model.marketpay.*;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.mirakl.client.mmp.domain.shop.MiraklShop;
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
@@ -12,6 +14,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +48,10 @@ public class ShareholderMappingServiceTest {
     private CreateAccountHolderResponse createAccountHolderResponse;
     @Mock
     private UpdateAccountHolderResponse updateAccountHolderResponse;
+    @Mock
+    private MiraklShop miraklShopMock;
+    @MockBean
+    private UboService uboServiceMock;
 
     @Before
     public void setup(){
@@ -54,6 +61,7 @@ public class ShareholderMappingServiceTest {
         when(shareHolderResponseMock2.getShareholderCode()).thenReturn(SHARE_HOLDER_CODE_2);
         when(shareHolderResponseMock3.getShareholderCode()).thenReturn(SHARE_HOLDER_CODE_3);
         when(shareHolderResponseMock4.getShareholderCode()).thenReturn(SHARE_HOLDER_CODE_4);
+        when(uboServiceMock.extractUboNumbersFromShop(miraklShopMock)).thenReturn(ImmutableSet.of(1,2,3,4));
     }
 
     @Test
@@ -61,7 +69,7 @@ public class ShareholderMappingServiceTest {
         when(createAccountHolderResponse.getAccountHolderDetails()).thenReturn(accountHolderDetailsResponseMock);
         when(createAccountHolderResponse.getAccountHolderCode()).thenReturn(SHOP_ID);
 
-        shareholderMappingService.updateShareholderMapping(createAccountHolderResponse);
+        shareholderMappingService.updateShareholderMapping(createAccountHolderResponse, miraklShopMock);
 
         assertMapping();
     }
@@ -71,7 +79,7 @@ public class ShareholderMappingServiceTest {
         when(updateAccountHolderResponse.getAccountHolderDetails()).thenReturn(accountHolderDetailsResponseMock);
         when(updateAccountHolderResponse.getAccountHolderCode()).thenReturn(SHOP_ID);
 
-        shareholderMappingService.updateShareholderMapping(updateAccountHolderResponse);
+        shareholderMappingService.updateShareholderMapping(updateAccountHolderResponse, miraklShopMock);
 
         assertMapping();
     }
@@ -80,7 +88,7 @@ public class ShareholderMappingServiceTest {
     public void shouldDoNothingIfNothingIfNoAccountHolderDetails() {
         when(updateAccountHolderResponse.getAccountHolderDetails()).thenReturn(null);
 
-        shareholderMappingService.updateShareholderMapping(updateAccountHolderResponse);
+        shareholderMappingService.updateShareholderMapping(updateAccountHolderResponse, miraklShopMock);
 
         List<ShareholderMapping> all = shareholderMappingRepository.findAll();
         Assertions.assertThat(all.size()).isEqualTo(0);
@@ -91,7 +99,7 @@ public class ShareholderMappingServiceTest {
         when(updateAccountHolderResponse.getAccountHolderDetails()).thenReturn(accountHolderDetailsResponseMock);
         when(accountHolderDetailsResponseMock.getBusinessDetails()).thenReturn(null);
 
-        shareholderMappingService.updateShareholderMapping(updateAccountHolderResponse);
+        shareholderMappingService.updateShareholderMapping(updateAccountHolderResponse, miraklShopMock);
 
         List<ShareholderMapping> all = shareholderMappingRepository.findAll();
         Assertions.assertThat(all.size()).isEqualTo(0);
@@ -104,35 +112,10 @@ public class ShareholderMappingServiceTest {
         when(accountHolderDetailsResponseMock.getBusinessDetails()).thenReturn(businessDetailsResponseMock);
         when(businessDetailsResponseMock.getShareholders()).thenReturn(null);
 
-        shareholderMappingService.updateShareholderMapping(updateAccountHolderResponse);
+        shareholderMappingService.updateShareholderMapping(updateAccountHolderResponse, miraklShopMock);
 
         List<ShareholderMapping> all = shareholderMappingRepository.findAll();
         Assertions.assertThat(all.size()).isEqualTo(0);
-    }
-
-    @Test
-    public void shouldUpdateWithNewShareholderCodeIfExists(){
-        when(updateAccountHolderResponse.getAccountHolderDetails()).thenReturn(accountHolderDetailsResponseMock);
-        when(updateAccountHolderResponse.getAccountHolderCode()).thenReturn(SHOP_ID);
-        when(businessDetailsResponseMock.getShareholders()).thenReturn(ImmutableList.of(shareHolderResponseMock1));
-
-        shareholderMappingService.updateShareholderMapping(updateAccountHolderResponse);
-
-        List<ShareholderMapping> allFirst = shareholderMappingRepository.findAll();
-        Assertions.assertThat(allFirst.size()).isEqualTo(1);
-        Assertions.assertThat(allFirst.get(0).getMiraklShopId()).isEqualTo(SHOP_ID);
-        Assertions.assertThat(allFirst.get(0).getMiraklUboNumber()).isEqualTo(1);
-        Assertions.assertThat(allFirst.get(0).getAdyenShareholderCode()).isEqualTo(SHARE_HOLDER_CODE_1);
-
-        when(shareHolderResponseMock1.getShareholderCode()).thenReturn(SHARE_HOLDER_CODE_2);
-
-        shareholderMappingService.updateShareholderMapping(updateAccountHolderResponse);
-
-        List<ShareholderMapping> allSecond = shareholderMappingRepository.findAll();
-        Assertions.assertThat(allSecond.size()).isEqualTo(1);
-        Assertions.assertThat(allSecond.get(0).getMiraklShopId()).isEqualTo(SHOP_ID);
-        Assertions.assertThat(allSecond.get(0).getMiraklUboNumber()).isEqualTo(1);
-        Assertions.assertThat(allSecond.get(0).getAdyenShareholderCode()).isEqualTo(SHARE_HOLDER_CODE_2);
     }
 
     private void assertMapping() {

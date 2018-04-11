@@ -1,0 +1,48 @@
+{
+    "fluentMethods": true,
+    "relationships": [],
+    "fields": [
+        {
+            "fieldName": "shopId",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "transferAmount",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "currencyIsoCode",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "iban",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "invoiceNumber",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "shopName",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "createdAt",
+            "fieldType": "ZonedDateTime"
+        },
+        {
+            "fieldName": "updatedAt",
+            "fieldType": "ZonedDateTime"
+        },
+        {
+            "fieldName": "subscriptionAmount",
+            "fieldType": "String"
+        }
+    ],
+    "changelogDate": "20180330145704",
+    "dto": "no",
+    "service": "serviceClass",
+    "entityTableName": "mirakl_voucher_entry",
+    "jpaMetamodelFiltering": false,
+    "pagination": "no"
+}

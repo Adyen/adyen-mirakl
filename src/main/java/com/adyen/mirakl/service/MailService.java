@@ -5,6 +5,7 @@ import io.github.jhipster.config.JHipsterProperties;
 import org.apache.commons.lang3.CharEncoding;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
@@ -26,8 +27,10 @@ public class MailService {
 
     private final JavaMailSender javaMailSender;
 
-    public MailService(JHipsterProperties jHipsterProperties, JavaMailSender javaMailSender) {
+    @Value("${miraklOperator.miraklOperatorEmail}")
+    private String bccEmail;
 
+    public MailService(JHipsterProperties jHipsterProperties, JavaMailSender javaMailSender) {
         this.jHipsterProperties = jHipsterProperties;
         this.javaMailSender = javaMailSender;
     }
@@ -42,6 +45,7 @@ public class MailService {
         try {
             MimeMessageHelper message = new MimeMessageHelper(mimeMessage, isMultipart, CharEncoding.UTF_8);
             message.setTo(to);
+            message.setBcc(bccEmail);
             message.setFrom(jHipsterProperties.getMail().getFrom());
             message.setSubject(subject);
             message.setText(content, isHtml);
@@ -53,4 +57,7 @@ public class MailService {
         }
     }
 
+    public void setBccEmail(final String bccEmail) {
+        this.bccEmail = bccEmail;
+    }
 }

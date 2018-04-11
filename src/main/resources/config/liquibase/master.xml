@@ -12,7 +12,12 @@
     <include file="config/liquibase/changelog/20180308121927_added_entity_EmailErrors.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20180316095906_added_entity_ShareholderMapping.xml" relativeToChangelogFile="false"/>
     <include file="config/liquibase/changelog/20180319152324_added_entity_AdyenPayoutError.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20180330145704_added_entity_MiraklVoucherEntry.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/addedIndexForShareHolderMapping.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20180405153559_added_entity_DocRetry.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20180308121927_added_entity_DocError.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-changelog - JHipster will add liquibase changelogs here -->
     <include file="config/liquibase/changelog/20180308121927_added_entity_constraints_EmailErrors.xml" relativeToChangelogFile="false"/>
+    <include file="config/liquibase/changelog/20180308121927_added_entity_constraints_DocError.xml" relativeToChangelogFile="false"/>
     <!-- jhipster-needle-liquibase-add-constraints-changelog - JHipster will add liquibase constraints changelogs here -->
 </databaseChangeLog>

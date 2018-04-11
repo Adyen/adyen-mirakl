@@ -1,0 +1,23 @@
+{
+    "fluentMethods": true,
+    "relationships": [
+        {
+            "relationshipName": "docRetry",
+            "otherEntityName": "docRetry",
+            "relationshipType": "many-to-one",
+            "otherEntityField": "id"
+        }
+    ],
+    "fields": [
+        {
+            "fieldName": "error",
+            "fieldType": "String"
+        }
+    ],
+    "changelogDate": "20180308121927",
+    "dto": "no",
+    "service": "no",
+    "entityTableName": "doc_errors",
+    "jpaMetamodelFiltering": false,
+    "pagination": "no"
+}

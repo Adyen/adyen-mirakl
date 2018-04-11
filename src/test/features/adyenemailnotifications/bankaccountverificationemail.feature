@@ -1,12 +1,11 @@
-@cucumber
 Feature: Bank Account Verification email notification
 
     @ADY-23
-    Scenario: KYCCheckSummary - Bank Statement message is sent to seller and operator (BCC)
-        Given a shop has been created in Mirakl for an Individual with Bank Information
+    Scenario: Bank Statement message is sent to seller and operator (BCC)
+        Given a seller creates a shop as an Individual with bank account information
             | city        | bank name | iban                   | bankOwnerName | lastName |
             | INVALIDDATA | testBank  | GB26TEST40051512347366 | TestData      | TestData |
-        And we process the data and push to Adyen
+        And the connector processes the data and pushes to Adyen
         When a RETRY_LIMIT_REACHED verificationStatus has been sent to the Connector
             """
                 {
@@ -33,8 +32,5 @@ Feature: Bank Account Verification email notification
                     }
                 }
             """
-        Then an email will be sent to the seller
-        """
-        Account verification
-        """
+        Then an Account verification email will be sent to the seller
 

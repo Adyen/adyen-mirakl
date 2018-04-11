@@ -1,15 +1,21 @@
 package com.adyen.mirakl.service;
 
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import com.adyen.mirakl.service.util.IsoUtil;
+import com.adyen.mirakl.MiraklShopFactory;
+import com.adyen.mirakl.startup.MiraklStartupValidator;
+import com.adyen.model.Address;
+import com.adyen.model.Name;
+import com.adyen.model.marketpay.*;
+import com.adyen.service.Account;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.mirakl.client.mmp.domain.common.MiraklAdditionalFieldValue;
+import com.mirakl.client.mmp.domain.common.currency.MiraklIsoCurrencyCode;
+import com.mirakl.client.mmp.domain.shop.MiraklContactInformation;
+import com.mirakl.client.mmp.domain.shop.MiraklShop;
+import com.mirakl.client.mmp.domain.shop.MiraklShops;
+import com.mirakl.client.mmp.domain.shop.bank.MiraklIbanBankAccountInformation;
+import com.mirakl.client.mmp.operator.core.MiraklMarketplacePlatformOperatorApiClient;
+import com.mirakl.client.mmp.request.shop.MiraklGetShopsRequest;
 import org.assertj.core.api.Assertions;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,37 +25,21 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-import com.adyen.mirakl.startup.MiraklStartupValidator;
-import com.adyen.model.Address;
-import com.adyen.model.Name;
-import com.adyen.model.marketpay.AccountHolderDetails;
-import com.adyen.model.marketpay.BankAccountDetail;
-import com.adyen.model.marketpay.BusinessDetails;
-import com.adyen.model.marketpay.CreateAccountHolderRequest;
-import com.adyen.model.marketpay.CreateAccountHolderResponse;
-import com.adyen.model.marketpay.DeleteBankAccountRequest;
-import com.adyen.model.marketpay.GetAccountHolderResponse;
-import com.adyen.model.marketpay.IndividualDetails;
-import com.adyen.model.marketpay.ShareholderContact;
-import com.adyen.model.marketpay.UpdateAccountHolderRequest;
-import com.adyen.model.marketpay.UpdateAccountHolderResponse;
-import com.adyen.service.Account;
-import com.google.common.collect.ImmutableList;
-import com.mirakl.client.mmp.domain.common.MiraklAdditionalFieldValue;
-import com.mirakl.client.mmp.domain.common.currency.MiraklIsoCurrencyCode;
-import com.mirakl.client.mmp.domain.shop.MiraklContactInformation;
-import com.mirakl.client.mmp.domain.shop.MiraklShop;
-import com.mirakl.client.mmp.domain.shop.MiraklShops;
-import com.mirakl.client.mmp.domain.shop.bank.MiraklIbanBankAccountInformation;
-import com.mirakl.client.mmp.operator.core.MiraklMarketplacePlatformOperatorApiClient;
-import com.mirakl.client.mmp.request.shop.MiraklGetShopsRequest;
+
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static com.adyen.mirakl.MiraklShopFactory.UBO_FIELDS;
+import static com.adyen.mirakl.MiraklShopFactory.UBO_FIELDS_ENUMS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ShopServiceTest {
@@ -74,9 +64,11 @@ public class ShopServiceTest {
     @Mock
     private ShareholderMappingService shareholderMappingService;
     @Mock
-    private UboService uboService;
+    private UboService uboServiceMock;
     @Mock
     private ShareholderContact shareHolderMock1, shareHolderMock2, shareHolderMock3, shareHolderMock4;
+    @Mock
+    private DocService docServiceMock;
 
     @Captor
     private ArgumentCaptor<CreateAccountHolderRequest> createAccountHolderRequestCaptor;
@@ -84,6 +76,8 @@ public class ShopServiceTest {
     private ArgumentCaptor<UpdateAccountHolderRequest> updateAccountHolderRequestCaptor;
     @Captor
     private ArgumentCaptor<MiraklGetShopsRequest> miraklGetShopsRequestCaptor;
+
+    private MiraklShop shop;
 
     @Before
     public void setup() {
@@ -110,7 +104,7 @@ public class ShopServiceTest {
     }
 
     @Test
-    public void testIsIbanIdentical() throws Exception {
+    public void testIsIbanIdentical() {
         String iban = "GB00IBAN";
         GetAccountHolderResponse getAccountHolderResponse = createGetAccountHolderResponse();
         assertEquals(true, shopService.isIbanIdentical(iban, getAccountHolderResponse));
@@ -120,7 +114,7 @@ public class ShopServiceTest {
     }
 
     @Test
-    public void testDeleteBankAccountRequest() throws Exception {
+    public void testDeleteBankAccountRequest() {
         GetAccountHolderResponse getAccountHolderResponse = new GetAccountHolderResponse();
         AccountHolderDetails accountHolderDetails = new AccountHolderDetails();
         List<BankAccountDetail> bankAccountDetails = new ArrayList<>();
@@ -203,17 +197,20 @@ public class ShopServiceTest {
         additionalField.setCode(String.valueOf(MiraklStartupValidator.CustomMiraklFields.ADYEN_LEGAL_ENTITY_TYPE));
         additionalField.setValue(MiraklStartupValidator.AdyenLegalEntityType.BUSINESS.toString());
 
-        final ImmutableList<MiraklAdditionalFieldValue> additionalFields = new ImmutableList.Builder<MiraklAdditionalFieldValue>().add(additionalField).build();
+        List<MiraklAdditionalFieldValue> uboFields = MiraklShopFactory.createMiraklAdditionalUboField("1", UBO_FIELDS, UBO_FIELDS_ENUMS);
+        final ImmutableList<MiraklAdditionalFieldValue> additionalFields = new ImmutableList.Builder<MiraklAdditionalFieldValue>().add(additionalField).addAll(uboFields).build();
+
         setup(additionalFields);
         when(adyenAccountServiceMock.updateAccountHolder(updateAccountHolderRequestCaptor.capture())).thenReturn(updateAccountHolderResponseMock);
         when(getAccountHolderResponseMock.getAccountHolderCode()).thenReturn("alreadyExisting");
-        when(uboService.extractUbos(any(), any())).thenReturn(ImmutableList.of(shareHolderMock1, shareHolderMock2, shareHolderMock3, shareHolderMock4));
+        when(uboServiceMock.extractUbos(any(), any())).thenReturn(ImmutableList.of(shareHolderMock1, shareHolderMock2, shareHolderMock3, shareHolderMock4));
 
         shopService.processUpdatedShops();
 
         UpdateAccountHolderRequest request = updateAccountHolderRequestCaptor.getValue();
         verify(adyenAccountServiceMock).updateAccountHolder(request);
-        verify(shareholderMappingService).updateShareholderMapping(updateAccountHolderResponseMock);
+        verify(shareholderMappingService).updateShareholderMapping(updateAccountHolderResponseMock, shop);
+        verify(docServiceMock).retryDocumentsForShop("id");
         assertEquals("id", request.getAccountHolderCode());
         final List<ShareholderContact> shareholders = request.getAccountHolderDetails().getBusinessDetails().getShareholders();
         Assertions.assertThat(shareholders).containsExactlyInAnyOrder(shareHolderMock1, shareHolderMock2, shareHolderMock3, shareHolderMock4);
@@ -258,7 +255,8 @@ public class ShopServiceTest {
         MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue additionalField = new MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue();
         additionalField.setCode(String.valueOf(MiraklStartupValidator.CustomMiraklFields.ADYEN_LEGAL_ENTITY_TYPE));
         additionalField.setValue(MiraklStartupValidator.AdyenLegalEntityType.BUSINESS.toString());
-        List<MiraklAdditionalFieldValue> additionalFields = new ArrayList<>();
+
+        List<MiraklAdditionalFieldValue> additionalFields = MiraklShopFactory.createMiraklAdditionalUboField("1", UBO_FIELDS, UBO_FIELDS_ENUMS);
         additionalFields.add(additionalField);
         shop.setAdditionalFieldValues(additionalFields);
 
@@ -268,12 +266,11 @@ public class ShopServiceTest {
         MiraklIbanBankAccountInformation miraklIbanBankAccountInformation = createMiraklIbanBankAccountInformation();
         shop.setPaymentInformation(miraklIbanBankAccountInformation);
 
-
         when(getAccountHolderResponseMock.getAccountHolderCode()).thenReturn(null);
+        when(uboServiceMock.extractUbos(any(), any())).thenReturn(ImmutableList.of(shareHolderMock1));
 
         // Update with no IBAN yet
         UpdateAccountHolderRequest request = shopService.updateAccountHolderRequestFromShop(shop, getAccountHolderResponseMock);
-
 
         assertEquals("id", request.getAccountHolderCode());
         assertEquals("GB", request.getAccountHolderDetails().getBankAccountDetails().get(0).getCountryCode());
@@ -283,7 +280,6 @@ public class ShopServiceTest {
         assertEquals("1111AA", request.getAccountHolderDetails().getBankAccountDetails().get(0).getOwnerPostalCode());
         assertEquals("BIC", request.getAccountHolderDetails().getBankAccountDetails().get(0).getBankBicSwift());
         assertEquals("610b", request.getAccountHolderDetails().getBankAccountDetails().get(0).getOwnerHouseNumberOrName());
-
 
         // Update with the same IBAN
         GetAccountHolderResponse getAccountHolderResponse = createGetAccountHolderResponse();
@@ -325,12 +321,12 @@ public class ShopServiceTest {
 
         when(adyenAccountServiceMock.createAccountHolder(createAccountHolderRequestCaptor.capture())).thenReturn(createAccountHolderResponseMock);
         when(getAccountHolderResponseMock.getAccountHolderCode()).thenReturn("");
-        when(uboService.extractUbos(any(), any())).thenReturn(ImmutableList.of(shareHolderMock1, shareHolderMock2, shareHolderMock3, shareHolderMock4));
+        when(uboServiceMock.extractUbos(any(), any())).thenReturn(ImmutableList.of(shareHolderMock1, shareHolderMock2, shareHolderMock3, shareHolderMock4));
 
         shopService.processUpdatedShops();
 
         verify(deltaService).updateShopDelta(any(ZonedDateTime.class));
-        verify(shareholderMappingService).updateShareholderMapping(createAccountHolderResponseMock);
+        verify(shareholderMappingService).updateShareholderMapping(createAccountHolderResponseMock, shop);
 
         List<ShareholderContact> shareHolders = createAccountHolderRequestCaptor.getAllValues()
                                                                                 .stream()
@@ -342,6 +338,23 @@ public class ShopServiceTest {
 
         Assertions.assertThat(shareHolders).containsExactlyInAnyOrder(shareHolderMock1, shareHolderMock2, shareHolderMock3, shareHolderMock4);
 
+    }
+
+    @Test
+    public void missingUbos() throws Exception {
+        MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue additionalField = new MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue();
+        additionalField.setCode(String.valueOf(MiraklStartupValidator.CustomMiraklFields.ADYEN_LEGAL_ENTITY_TYPE));
+        additionalField.setValue(MiraklStartupValidator.AdyenLegalEntityType.BUSINESS.toString());
+
+        setup(ImmutableList.of(additionalField));
+
+        when(getAccountHolderResponseMock.getAccountHolderCode()).thenReturn("");
+        when(uboServiceMock.extractUbos(any(), any())).thenReturn(null);
+
+        shopService.processUpdatedShops();
+
+        verify(deltaService).updateShopDelta(any(ZonedDateTime.class));
+        verify(adyenAccountServiceMock, never()).createAccountHolder(any());
     }
 
     private MiraklIbanBankAccountInformation createMiraklIbanBankAccountInformation() {
@@ -371,7 +384,7 @@ public class ShopServiceTest {
         miraklShops.setShops(shops);
         miraklShops.setTotalCount(1L);
 
-        MiraklShop shop = new MiraklShop();
+        shop = new MiraklShop();
         shops.add(shop);
 
         MiraklContactInformation contactInformation = new MiraklContactInformation();

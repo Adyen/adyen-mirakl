@@ -1,0 +1,14 @@
+{
+    "eventDate": "2018-04-03T12:24:59+02:00",
+    "eventType": "ACCOUNT_HOLDER_VERIFICATION",
+    "executingUserKey": "Account Holder Update",
+    "live": "false",
+    "pspReference": "8815227510990219",
+    "content": {
+        "accountHolderCode": "11141",
+        "shareholderCode": "c6adfbe1-4794-4e31-9861-9f69dee3a60e",
+        "statusSummaryItems": [],
+        "verificationStatus": "DATA_PROVIDED",
+        "verificationType": "PASSPORT_VERIFICATION"
+    }
+}

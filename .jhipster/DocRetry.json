@@ -1,0 +1,31 @@
+{
+    "fluentMethods": true,
+    "relationships": [
+        {
+            "relationshipName": "docError",
+            "otherEntityName": "docError",
+            "relationshipType": "one-to-many",
+            "otherEntityField": "id"
+        }
+    ],
+    "fields": [
+        {
+            "fieldName": "docId",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "shopId",
+            "fieldType": "String"
+        },
+        {
+            "fieldName": "timesFailed",
+            "fieldType": "Integer"
+        }
+    ],
+    "changelogDate": "20180405153559",
+    "dto": "no",
+    "service": "no",
+    "entityTableName": "doc_retry",
+    "jpaMetamodelFiltering": false,
+    "pagination": "no"
+}

@@ -12,10 +12,7 @@ import com.mirakl.client.mmp.domain.shop.bank.MiraklPaymentInformation;
 import net.minidev.json.JSONArray;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class AssertionHelper {
@@ -93,7 +90,7 @@ public class AssertionHelper {
         ImmutableList.Builder<String> miraklShopData = new ImmutableList.Builder<>();
         List<String> shopAdditionalFields = new ArrayList<>();
         int maxUbos = Integer.parseInt(rows.get(0).get("maxUbos"));
-        for (int i = 1; i < maxUbos; i++) {
+        for (int i = 1; i <= maxUbos; i++) {
             shopAdditionalFields.add("adyen-ubo" + i + "-firstname");
             shopAdditionalFields.add("adyen-ubo" + i + "-lastname");
             shopAdditionalFields.add("adyen-ubo" + i + "-civility");
@@ -107,25 +104,25 @@ public class AssertionHelper {
                 shopAdditionalFields.add("adyen-ubo" + i + "-streetname");
             }
             shopAdditionalFields.add("adyen-ubo" + i + "-zip");
-
-            for (String field : shopAdditionalFields) {
-                String fieldValue = miraklShop.getAdditionalFieldValues()
-                    .stream()
-                    .filter(MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue.class::isInstance)
-                    .map(MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue.class::cast)
-                    .filter(x -> field.equals(x.getCode()))
-                    .map(MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue::getValue)
-                    .findAny()
-                    .orElse("");
-                if (field.contains("civility")) {
-                    miraklShopData.add(CIVILITY_TO_GENDER.get(fieldValue));
-                } else {
-                    if (!fieldValue.isEmpty()){
-                        miraklShopData.add(fieldValue);
-                    }
+        }
+        for (String field : shopAdditionalFields) {
+            String fieldValue = miraklShop.getAdditionalFieldValues()
+                .stream()
+                .filter(MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue.class::isInstance)
+                .map(MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue.class::cast)
+                .filter(x -> field.equals(x.getCode()))
+                .map(MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue::getValue)
+                .findAny()
+                .orElse("");
+            if (field.contains("civility")) {
+                miraklShopData.add(CIVILITY_TO_GENDER.get(fieldValue));
+            } else {
+                if (!fieldValue.isEmpty()){
+                    miraklShopData.add(fieldValue);
                 }
             }
         }
+
         return miraklShopData;
     }
 

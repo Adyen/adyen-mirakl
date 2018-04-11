@@ -119,26 +119,23 @@ application:
     emailRetryCron: "0 */10 * * * ?"
     removeSentEmailsCron: "0 0 2 * * ?"
     payoutRetryCron: "0 */10 * * * ?"
+    retryDocsCron: "0 */1 * * * ?"
     initialDeltaDaysBack: 0
     maxPayoutFailed: 10
     houseNumbersRegex:
         NL: "\\s([a-zA-Z]*\\d+[a-zA-Z]*)$"
+    basicUsername: test
+    basicPassword: test
 
 shops:
     shopIds:
-        Cottons Shop: 2000
-        Samras Supermarket: 2001
         UpdateShop01: 7492
         UpdateShop02: 7695
-
-accounts:
-    accountCode:
-        # alessioIndividualTestPayout2 (accountHolderCode) used for balance transfer for newly created shops for payout test scenarios
-        sourceAccountCode: 131712554
 
 miraklOperator:
     miraklEnvUrl: ${MIRAKL_ENV_URL}
     miraklApiKey: ${MIRAKL_API_OPERATOR_KEY}
+    miraklOperatorEmail: ${MIRAKL_OPERATOR_EMAIL}
 miraklFront:
     miraklEnvUrl: ${MIRAKL_ENV_URL}
     miraklApiKey: ${MIRAKL_API_FRONT_KEY}
@@ -155,8 +152,8 @@ adyenNotificationsConfig:
           description: ${ADYEN_NOTIFY_URL}
           messageFormat: JSON
           notifyURL: ${ADYEN_NOTIFY_URL}
-          notifyUsername: ${ADYEN_NOTIFY_USERNAME}
-          notifyPassword: ${ADYEN_NOTIFY_PASSWORD}
+          notifyUsername: test
+          notifyPassword: test
           sslProtocol: TLSV12
           eventConfigs:
             - eventType: ACCOUNT_CREATED
@@ -203,4 +200,10 @@ mailtrapConfig:
 
 payoutService:
     subscriptionTransferCode: SUBSCRIPTION
+    transferCode: TransferCode_1
     liableAccountCode: ${ADYEN_LIABLE_ACCOUNT_CODE}
+
+accounts:
+    accountCode:
+        sourceAccountCode: 131712554
+        zeroBalanceSourceAccountCode: 185335929

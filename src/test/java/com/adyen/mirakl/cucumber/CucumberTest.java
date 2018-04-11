@@ -1,12 +1,10 @@
 package com.adyen.mirakl.cucumber;
 
-import com.adyen.mirakl.cucumber.stepdefs.helpers.stepshelper.StepDefsHelper;
 import cucumber.api.CucumberOptions;
 import cucumber.api.junit.Cucumber;
 import cucumber.api.testng.CucumberFeatureWrapper;
 import cucumber.api.testng.TestNGCucumberRunner;
 import cucumber.runtime.model.CucumberFeature;
-import org.assertj.core.api.Assertions;
 import org.junit.runner.RunWith;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -16,8 +14,8 @@ import org.testng.annotations.Test;
 import java.util.List;
 
 @RunWith(Cucumber.class)
-@CucumberOptions(plugin = "pretty", features = "src/test/features", tags = {"~@bug", "@cucumber", "~@exclude"})
-public class CucumberTest extends StepDefsHelper {
+@CucumberOptions(plugin = "pretty", features = "src/test/features", tags = {"~@bug", "~@exclude"})
+public class CucumberTest {
 
     private TestNGCucumberRunner testNGCucumberRunner;
 
@@ -26,33 +24,37 @@ public class CucumberTest extends StepDefsHelper {
         testNGCucumberRunner = new TestNGCucumberRunner(this.getClass());
     }
 
-    @Test(description = "Runs smoke test")
+    @Test(suiteName = "cucumber")
     public void smokeTest() {
-        List<CucumberFeature> features = testNGCucumberRunner.getFeatures();
-        CucumberFeature feature = null;
-        for (CucumberFeature cucumberFeature : features) {
-            if (cucumberFeature.getGherkinFeature().getId().equalsIgnoreCase("smoke-test")){
-                feature = cucumberFeature;
-                break;
-            }
-        }
-        Assertions.assertThat(feature).isNotNull();
-        testNGCucumberRunner.runCucumber(feature);
+        runTaggedFeature(allFeatures(), "@smoke");
     }
 
-    @Test(dependsOnMethods = {"smokeTest"}, testName = "cucumber", description = "Runs Cucumber Features", dataProvider = "features")
-    public void feature(CucumberFeatureWrapper cucumberFeature) {
-        testNGCucumberRunner.runCucumber(cucumberFeature.getCucumberFeature());
+    @Test(dependsOnMethods = "smokeTest", suiteName = "cucumber", dataProvider = "features")
+    public void feature(CucumberFeatureWrapper featureWrapper) {
+      testNGCucumberRunner.runCucumber(featureWrapper.getCucumberFeature());
     }
 
     @DataProvider
-    public Object[][] features() {
+    private Object[][] features() {
         return testNGCucumberRunner.provideFeatures();
+    }
+
+    private void runTaggedFeature(List<CucumberFeature> features, String cucumberTag) {
+        features.forEach(feature -> {
+            boolean match = feature.getGherkinFeature().getTags().stream()
+                .anyMatch(tag -> tag.getName().equals(cucumberTag));
+            if (match) {
+                testNGCucumberRunner.runCucumber(feature);
+            }
+        });
+    }
+
+    private List<CucumberFeature> allFeatures() {
+        return testNGCucumberRunner.getFeatures();
     }
 
     @AfterClass(alwaysRun = true)
     public void tearDownClass() {
         testNGCucumberRunner.finish();
     }
-
 }

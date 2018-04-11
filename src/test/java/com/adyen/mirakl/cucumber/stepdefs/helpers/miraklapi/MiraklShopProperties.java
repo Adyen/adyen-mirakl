@@ -52,6 +52,19 @@ class MiraklShopProperties extends AbstractMiraklShopSharedProperties {
         });
     }
 
+    void populateShareholderInNonSequentialOrder(String legalEntity, List<Map<String, String>> rows, MiraklCreateShop createShop) {
+        ImmutableList.Builder<MiraklRequestAdditionalFieldValue> builder = ImmutableList.builder();
+        rows.forEach(row -> {
+            maxUbos = row.get("UBO");
+            int ubo = Integer.valueOf(maxUbos);
+            Map<Integer, Map<String, String>> uboKeys = uboService.generateMiraklUboKeys(Integer.valueOf(maxUbos));
+            buildShareHolderMinimumData(builder, ubo, uboKeys, civility());
+            builder.add(createAdditionalField("adyen-legal-entity-type", legalEntity));
+            builder.add(createAdditionalField("adyen-business-housenumber", FAKER.address().streetAddressNumber()));
+            createShop.setAdditionalFieldValues(builder.build());
+        });
+    }
+
     void populateShareHolderData(String legalEntity, List<Map<String, String>> rows, MiraklCreateShop createShop) {
         rows.forEach(row -> {
             maxUbos = row.get("maxUbos");

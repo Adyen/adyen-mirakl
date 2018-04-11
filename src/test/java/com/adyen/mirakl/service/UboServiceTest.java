@@ -1,11 +1,31 @@
 package com.adyen.mirakl.service;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import org.assertj.core.api.Assertions;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Answers;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+import com.adyen.mirakl.MiraklShopFactory;
 import com.adyen.mirakl.domain.ShareholderMapping;
 import com.adyen.mirakl.repository.ShareholderMappingRepository;
 import com.adyen.mirakl.service.dto.UboDocumentDTO;
 import com.adyen.model.Address;
 import com.adyen.model.Name;
-import com.adyen.model.marketpay.*;
+import com.adyen.model.marketpay.DocumentDetail;
+import com.adyen.model.marketpay.GetAccountHolderResponse;
+import com.adyen.model.marketpay.PersonalData;
+import com.adyen.model.marketpay.PhoneNumber;
+import com.adyen.model.marketpay.ShareholderContact;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -16,17 +36,8 @@ import com.mirakl.client.mmp.domain.shop.MiraklShops;
 import com.mirakl.client.mmp.domain.shop.document.MiraklShopDocument;
 import com.mirakl.client.mmp.operator.core.MiraklMarketplacePlatformOperatorApiClient;
 import com.mirakl.client.mmp.request.shop.MiraklGetShopsRequest;
-import org.assertj.core.api.Assertions;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.*;
-import org.mockito.runners.MockitoJUnitRunner;
-
-import java.util.*;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
+import static com.adyen.mirakl.MiraklShopFactory.UBO_FIELDS;
+import static com.adyen.mirakl.MiraklShopFactory.UBO_FIELDS_ENUMS;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -34,25 +45,6 @@ public class UboServiceTest {
 
     @InjectMocks
     private UboService uboService;
-
-    private static final Map<String, String> UBO_FIELDS_ENUMS = ImmutableMap.of(
-        "civility", "mr",
-        "phonetype", "mobile");
-
-    private static final Set<String> UBO_FIELDS = ImmutableSet.of(
-        "firstname",
-        "lastname",
-        "email",
-        "dob",
-        "nationality",
-        "idnumber",
-        "housenumber",
-        "streetname",
-        "city",
-        "zip",
-        "country",
-        "phonecountry",
-        "phonenumber");
 
     @Mock(answer = Answers.RETURNS_DEEP_STUBS)
     private MiraklShop miraklShopMock;
@@ -79,18 +71,17 @@ public class UboServiceTest {
     private ArgumentCaptor<MiraklGetShopsRequest> miraklGetShopsRequestCaptor;
 
     @Before
-    public void setup(){
+    public void setup() {
         uboService.setHouseNumberPatterns(ImmutableMap.of("NL", Pattern.compile("\\s([a-zA-Z]*\\d+[a-zA-Z]*)$")));
     }
 
     @Test
     public void shouldCreateAllShareholdersFromUbos() {
         uboService.setMaxUbos(4);
-        List<MiraklAdditionalFieldValue> ubo1 = createMiraklAdditionalUboField("1", UBO_FIELDS, UBO_FIELDS_ENUMS);
-        List<MiraklAdditionalFieldValue> ubo2 = createMiraklAdditionalUboField("2", UBO_FIELDS, UBO_FIELDS_ENUMS);
-        List<MiraklAdditionalFieldValue> ubo3 = createMiraklAdditionalUboField("3", UBO_FIELDS, UBO_FIELDS_ENUMS);
-        List<MiraklAdditionalFieldValue> ubo4 = createMiraklAdditionalUboField("4", UBO_FIELDS, UBO_FIELDS_ENUMS);
-
+        List<MiraklAdditionalFieldValue> ubo1 = MiraklShopFactory.createMiraklAdditionalUboField("1", UBO_FIELDS, UBO_FIELDS_ENUMS);
+        List<MiraklAdditionalFieldValue> ubo2 = MiraklShopFactory.createMiraklAdditionalUboField("2", UBO_FIELDS, UBO_FIELDS_ENUMS);
+        List<MiraklAdditionalFieldValue> ubo3 = MiraklShopFactory.createMiraklAdditionalUboField("3", UBO_FIELDS, UBO_FIELDS_ENUMS);
+        List<MiraklAdditionalFieldValue> ubo4 = MiraklShopFactory.createMiraklAdditionalUboField("4", UBO_FIELDS, UBO_FIELDS_ENUMS);
         final List<MiraklAdditionalFieldValue> additionalFields = Streams.concat(ubo1.stream(), ubo2.stream(), ubo3.stream(), ubo4.stream()).collect(Collectors.toList());
         when(miraklShopMock.getAdditionalFieldValues()).thenReturn(additionalFields);
         when(miraklShopMock.getId()).thenReturn("shopCode");
@@ -111,7 +102,7 @@ public class UboServiceTest {
     @Test
     public void shouldNotCreateIfMissingCivility() {
         uboService.setMaxUbos(1);
-        List<MiraklAdditionalFieldValue> ubo1 = createMiraklAdditionalUboField("1", ImmutableSet.of("firstname","lastname","email"), ImmutableMap.of());
+        List<MiraklAdditionalFieldValue> ubo1 = MiraklShopFactory.createMiraklAdditionalUboField("1", ImmutableSet.of("firstname", "lastname", "email"), ImmutableMap.of());
         when(miraklShopMock.getAdditionalFieldValues()).thenReturn(ubo1);
 
         final List<ShareholderContact> result = uboService.extractUbos(miraklShopMock);
@@ -122,7 +113,7 @@ public class UboServiceTest {
     @Test
     public void shouldNotCreateIfMissingFirstName() {
         uboService.setMaxUbos(1);
-        List<MiraklAdditionalFieldValue> ubo1 = createMiraklAdditionalUboField("1", ImmutableSet.of("lastname","email"), ImmutableMap.of("civility", "Mr"));
+        List<MiraklAdditionalFieldValue> ubo1 = MiraklShopFactory.createMiraklAdditionalUboField("1", ImmutableSet.of("lastname", "email"), ImmutableMap.of("civility", "Mr"));
         when(miraklShopMock.getAdditionalFieldValues()).thenReturn(ubo1);
 
         final List<ShareholderContact> result = uboService.extractUbos(miraklShopMock);
@@ -133,7 +124,7 @@ public class UboServiceTest {
     @Test
     public void shouldNotCreateIfMissingLastName() {
         uboService.setMaxUbos(1);
-        List<MiraklAdditionalFieldValue> ubo1 = createMiraklAdditionalUboField("1", ImmutableSet.of("firstname","email"), ImmutableMap.of("civility", "Mr"));
+        List<MiraklAdditionalFieldValue> ubo1 = MiraklShopFactory.createMiraklAdditionalUboField("1", ImmutableSet.of("firstname", "email"), ImmutableMap.of("civility", "Mr"));
         when(miraklShopMock.getAdditionalFieldValues()).thenReturn(ubo1);
 
         final List<ShareholderContact> result = uboService.extractUbos(miraklShopMock);
@@ -144,7 +135,7 @@ public class UboServiceTest {
     @Test
     public void shouldNotCreateIfMissingEmail() {
         uboService.setMaxUbos(1);
-        List<MiraklAdditionalFieldValue> ubo1 = createMiraklAdditionalUboField("1", ImmutableSet.of("firstname","lastname"), ImmutableMap.of("civility", "Mr"));
+        List<MiraklAdditionalFieldValue> ubo1 = MiraklShopFactory.createMiraklAdditionalUboField("1", ImmutableSet.of("firstname", "lastname"), ImmutableMap.of("civility", "Mr"));
         when(miraklShopMock.getAdditionalFieldValues()).thenReturn(ubo1);
 
         final List<ShareholderContact> result = uboService.extractUbos(miraklShopMock);
@@ -156,7 +147,7 @@ public class UboServiceTest {
     @Test
     public void shouldNotCreateDataIfMissing() {
         uboService.setMaxUbos(1);
-        List<MiraklAdditionalFieldValue> ubo1 = createMiraklAdditionalUboField("1", ImmutableSet.of("firstname","lastname","email"), ImmutableMap.of("civility", "Mr"));
+        List<MiraklAdditionalFieldValue> ubo1 = MiraklShopFactory.createMiraklAdditionalUboField("1", ImmutableSet.of("firstname", "lastname", "email"), ImmutableMap.of("civility", "Mr"));
         when(miraklShopMock.getAdditionalFieldValues()).thenReturn(ubo1);
         when(miraklShopMock.getId()).thenReturn("shopCode");
         when(shareholderMappingRepositoryMock.findOneByMiraklShopIdAndMiraklUboNumber("shopCode", 1)).thenReturn(Optional.empty());
@@ -179,7 +170,7 @@ public class UboServiceTest {
     @Test
     public void shouldTakeFromStreetIfHouseNumberIsMissingAndCountryRegexExistsForParsingStreetLine() {
         uboService.setMaxUbos(2);
-        List<MiraklAdditionalFieldValue> ubo1Start = createMiraklAdditionalUboField("2", ImmutableSet.of("firstname","lastname","email"), ImmutableMap.of("civility", "Mr"));
+        List<MiraklAdditionalFieldValue> ubo1Start = MiraklShopFactory.createMiraklAdditionalUboField("2", ImmutableSet.of("firstname", "lastname", "email"), ImmutableMap.of("civility", "Mr"));
 
         MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue additionalField = new MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue();
         additionalField.setCode("adyen-ubo2-streetname");
@@ -207,12 +198,12 @@ public class UboServiceTest {
     }
 
     @Test
-    public void shouldUseMappingFromExistingShop(){
+    public void shouldUseMappingFromExistingShop() {
         uboService.setMaxUbos(4);
-        List<MiraklAdditionalFieldValue> ubo1 = createMiraklAdditionalUboField("1", UBO_FIELDS, UBO_FIELDS_ENUMS);
-        List<MiraklAdditionalFieldValue> ubo2 = createMiraklAdditionalUboField("2", UBO_FIELDS, UBO_FIELDS_ENUMS);
-        List<MiraklAdditionalFieldValue> ubo3 = createMiraklAdditionalUboField("3", UBO_FIELDS, UBO_FIELDS_ENUMS);
-        List<MiraklAdditionalFieldValue> ubo4 = createMiraklAdditionalUboField("4", UBO_FIELDS, UBO_FIELDS_ENUMS);
+        List<MiraklAdditionalFieldValue> ubo1 = MiraklShopFactory.createMiraklAdditionalUboField("1", UBO_FIELDS, UBO_FIELDS_ENUMS);
+        List<MiraklAdditionalFieldValue> ubo2 = MiraklShopFactory.createMiraklAdditionalUboField("2", UBO_FIELDS, UBO_FIELDS_ENUMS);
+        List<MiraklAdditionalFieldValue> ubo3 = MiraklShopFactory.createMiraklAdditionalUboField("3", UBO_FIELDS, UBO_FIELDS_ENUMS);
+        List<MiraklAdditionalFieldValue> ubo4 = MiraklShopFactory.createMiraklAdditionalUboField("4", UBO_FIELDS, UBO_FIELDS_ENUMS);
         final List<MiraklAdditionalFieldValue> additionalFields = Streams.concat(ubo1.stream(), ubo2.stream(), ubo3.stream(), ubo4.stream()).collect(Collectors.toList());
         when(miraklShopMock.getAdditionalFieldValues()).thenReturn(additionalFields);
         when(miraklShopMock.getId()).thenReturn("shopCode");
@@ -220,8 +211,15 @@ public class UboServiceTest {
         when(shareholderMappingRepositoryMock.findOneByMiraklShopIdAndMiraklUboNumber("shopCode", 2)).thenReturn(Optional.empty());
         when(shareholderMappingRepositoryMock.findOneByMiraklShopIdAndMiraklUboNumber("shopCode", 3)).thenReturn(Optional.empty());
         when(shareholderMappingRepositoryMock.findOneByMiraklShopIdAndMiraklUboNumber("shopCode", 4)).thenReturn(Optional.empty());
+        when(shareholderMappingRepositoryMock.findOneByAdyenShareholderCode("shareholderCode1")).thenReturn(Optional.empty());
+        when(shareholderMappingRepositoryMock.findOneByAdyenShareholderCode("shareholderCode2")).thenReturn(Optional.empty());
+        when(shareholderMappingRepositoryMock.findOneByAdyenShareholderCode("shareholderCode3")).thenReturn(Optional.empty());
+        when(shareholderMappingRepositoryMock.findOneByAdyenShareholderCode("shareholderCode4")).thenReturn(Optional.empty());
 
-        when(existingAccountHolderMock.getAccountHolderDetails().getBusinessDetails().getShareholders()).thenReturn(ImmutableList.of(shareholderMock1, shareholderMock2, shareholderMock3, shareholderMock4));
+        when(existingAccountHolderMock.getAccountHolderDetails().getBusinessDetails().getShareholders()).thenReturn(ImmutableList.of(shareholderMock1,
+                                                                                                                                     shareholderMock2,
+                                                                                                                                     shareholderMock3,
+                                                                                                                                     shareholderMock4));
         when(shareholderMock1.getShareholderCode()).thenReturn("shareholderCode1");
         when(shareholderMock2.getShareholderCode()).thenReturn("shareholderCode2");
         when(shareholderMock3.getShareholderCode()).thenReturn("shareholderCode3");
@@ -233,7 +231,7 @@ public class UboServiceTest {
     }
 
     @Test
-    public void shouldExtractMiraklDocumentsRelatedToUbos(){
+    public void shouldExtractMiraklDocumentsRelatedToUbos() {
         uboService.setMaxUbos(4);
 
         //shop 1
@@ -273,7 +271,12 @@ public class UboServiceTest {
         when(shareholderMappingMock2.getAdyenShareholderCode()).thenReturn("shareholderCode2");
         when(shareholderMappingMock3.getAdyenShareholderCode()).thenReturn("shareholderCode3");
 
-        final List<UboDocumentDTO> result = uboService.extractUboDocuments(ImmutableList.of(miraklShopDocument1, miraklShopDocument2, miraklShopDocument3, miraklShopDocument4, miraklShopDocument5, miraklShopDocument6));
+        final List<UboDocumentDTO> result = uboService.extractUboDocuments(ImmutableList.of(miraklShopDocument1,
+                                                                                            miraklShopDocument2,
+                                                                                            miraklShopDocument3,
+                                                                                            miraklShopDocument4,
+                                                                                            miraklShopDocument5,
+                                                                                            miraklShopDocument6));
 
         List<MiraklGetShopsRequest> requestsToMirakl = miraklGetShopsRequestCaptor.getAllValues();
         Assertions.assertThat(requestsToMirakl.size()).isEqualTo(3);
@@ -346,23 +349,6 @@ public class UboServiceTest {
 
         final Set<String> shareholderCodes = shareHolders.stream().map(ShareholderContact::getShareholderCode).collect(Collectors.toSet());
         Assertions.assertThat(shareholderCodes).containsExactlyInAnyOrder("shareholderCode1", "shareholderCode2", "shareholderCode3", "shareholderCode4");
-    }
-
-    private List<MiraklAdditionalFieldValue> createMiraklAdditionalUboField(String uboNumber, Set<String> uboFields, Map<String, String> uboEnumFields) {
-        final ImmutableList.Builder<MiraklAdditionalFieldValue> builder = new ImmutableList.Builder<>();
-        uboFields.forEach(uboFieldName -> {
-            MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue additionalField = new MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue();
-            additionalField.setCode("adyen-ubo" + uboNumber + "-" + uboFieldName);
-            additionalField.setValue(uboFieldName + uboNumber);
-            builder.add(additionalField);
-        });
-        uboEnumFields.forEach((k, v) -> {
-            MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue additionalField = new MiraklAdditionalFieldValue.MiraklValueListAdditionalFieldValue();
-            additionalField.setCode("adyen-ubo" + uboNumber + "-" + k);
-            additionalField.setValue(v);
-            builder.add(additionalField);
-        });
-        return builder.build();
     }
 
 }

@@ -6,25 +6,30 @@ This page is a quick overview cheatsheet for developers.
 ## Development
 This application was generated using JHipster 4.14.0, you can find documentation and help at [http://www.jhipster.tech/documentation-archive/v4.14.0](http://www.jhipster.tech/documentation-archive/v4.14.0).
 
-Please add environment variables for `MIRAKL_SDK_USER`, `MIRAKL_SDK_PASSWORD`, `MIRAKL_ENV_URL`, `MIRAKL_API_OPERATOR_KEY` and `MIRAKL_API_FRONT_KEY` e.g.
+Please add environment variables for `MIRAKL_SDK_USER`, `MIRAKL_SDK_PASSWORD`, `MIRAKL_ENV_URL`, `MIRAKL_API_OPERATOR_KEY`, `MIRAKL_OPERATOR_EMAIL` and `MIRAKL_API_FRONT_KEY` e.g.
 update `~/.bashrc` with:
 ```
 export MIRAKL_SDK_USER=<user>
 export MIRAKL_SDK_PASSWORD=<pass>
 export MIRAKL_ENV_URL=<miraklEnvUrl>
 export MIRAKL_API_OPERATOR_KEY=<miraklApiOperatorKey>
+export MIRAKL_OPERATOR_EMAIL=<miraklOperatorEmail>
 export MIRAKL_API_FRONT_KEY=<miraklApiFrontKey>
 ```
 
-Same goes for Adyen: `ADYEN_USER_NAME`, `ADYEN_PASS`, `ADYEN_ENV`, `ADYEN_NOTIFY_URL`, `ADYEN_NOTIFY_USERNAME`, `ADYEN_NOTIFY_PASSWORD` AND `ADYEN_LIABLE_ACCOUNT_CODE`. 
+Same goes for Adyen: `ADYEN_USER_NAME`, `ADYEN_PASS`, `ADYEN_ENV`, `ADYEN_NOTIFY_URL` AND `ADYEN_LIABLE_ACCOUNT_CODE`. 
 ```
 export ADYEN_USER_NAME=<user>
 export ADYEN_PASS=<pass>
 export ADYEN_ENV=<TEST|LIVE>
-export ADYEN_NOTIFY_URL=<notifyUrl>
-export ADYEN_NOTIFY_USERNAME=<notifyUsername>
-export ADYEN_NOTIFY_PASSWORD=<notifyPassword>
+export ADYEN_NOTIFY_URL=<e.g. http://adyen-mirakl-connector.domain.com/api/adyen-notifications>
 export ADYEN_LIABLE_ACCOUNT_CODE=<accountCode>
+```
+
+And settings for receiving notifications from Adyen and Mirakl: `NOTIFY_USERNAME` and `NOTIFY_PASSWORD`
+```
+export NOTIFY_USERNAME=<notifyUsername>
+export NOTIFY_PASSWORD=<notifyPassword>
 ```
 
 We use heroku mailtrap for development, please add the user and password in application.yml

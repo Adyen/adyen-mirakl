@@ -1,4 +1,4 @@
-@cucumber
+@smoke
 Feature: Smoke test
 
     Scenario: Ping test to ensure endpoint is receiving notifications
@@ -6,6 +6,6 @@ Feature: Smoke test
             | seller       |
             | UpdateShop01 |
         When the Mirakl Shop Details have been changed
-        And we process the data and push to Adyen
-        Then a notification will be sent pertaining to ACCOUNT_HOLDER_UPDATED
+        And the connector processes the data and pushes to Adyen
+        Then the ACCOUNT_HOLDER_UPDATED will be sent by Adyen
 

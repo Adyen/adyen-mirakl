@@ -17,4 +17,6 @@ public interface ShareholderMappingRepository extends JpaRepository<ShareholderM
 
     Optional<ShareholderMapping> findOneByMiraklShopIdAndMiraklUboNumber(String shopCode, Integer uboNumber);
 
+    Optional<ShareholderMapping> findOneByAdyenShareholderCode(String adyenShareholderCode);
+
 }

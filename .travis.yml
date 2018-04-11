@@ -2,20 +2,15 @@ os:
   - linux
 services:
   - docker
-language: node_js
-node_js:
-  - "8.9.4"
+language: generic
 jdk:
   - oraclejdk8
 sudo: false
 cache:
   directories:
-    - node
-    - node_modules
     - $HOME/.gradle
 env:
   global:
-    - NODE_VERSION=8.9.4
     - SPRING_OUTPUT_ANSI_ENABLED=ALWAYS
     - SPRING_JPA_SHOW_SQL=false
     - TERM=dumb

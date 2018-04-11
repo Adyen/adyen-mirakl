@@ -81,6 +81,21 @@ class MiraklUpdateShopProperties extends AbstractMiraklShopSharedProperties {
         return builder;
     }
 
+    ImmutableList.Builder<MiraklSimpleRequestAdditionalFieldValue> addUBOToMiraklShop(List<Map<String, String>> rows) {
+        ImmutableList.Builder<MiraklSimpleRequestAdditionalFieldValue> builder = ImmutableList.builder();
+        rows.forEach(row -> {
+            maxUbos = row.get("UBO");
+            int ubo = Integer.valueOf(maxUbos);
+            Map<Integer, Map<String, String>> uboKeys = uboService.generateMiraklUboKeys(Integer.valueOf(maxUbos));
+            builder.add(createAdditionalField(uboKeys.get(ubo).get(UboService.CIVILITY), civility()));
+            builder.add(createAdditionalField(uboKeys.get(ubo).get(UboService.FIRSTNAME), FAKER.name().firstName()));
+            builder.add(createAdditionalField(uboKeys.get(ubo).get(UboService.LASTNAME), FAKER.name().lastName()));
+            builder.add(createAdditionalField(uboKeys.get(ubo).get(UboService.EMAIL), "adyen-mirakl" + UUID.randomUUID() + "@mailtrap.com"));
+
+        });
+        return builder;
+    }
+
     ImmutableList.Builder<MiraklSimpleRequestAdditionalFieldValue> updateMiraklShopUbosWithInvalidData(List<Map<String, String>> rows) {
         ImmutableList.Builder<MiraklSimpleRequestAdditionalFieldValue> builder = ImmutableList.builder();
         rows.forEach(row -> {
@@ -169,15 +184,23 @@ class MiraklUpdateShopProperties extends AbstractMiraklShopSharedProperties {
 
     MiraklShopAddress updateMiraklShopAddress(MiraklShop miraklShop, Map<String, String> row) {
         MiraklShopAddress address = new MiraklShopAddress();
-
-        address.setCity(row.get("city"));
-        address.setCivility(miraklShop.getContactInformation().getCivility());
-        address.setCountry(miraklShop.getContactInformation().getCountry());
-        address.setFirstname(row.get("firstName"));
-        address.setLastname(row.get("lastName"));
-        address.setStreet1(miraklShop.getContactInformation().getStreet1());
-        address.setZipCode(row.get("postCode"));
-
+        if (row.get("firstName") != null) {
+            address.setCity(row.get("city"));
+            address.setCivility(miraklShop.getContactInformation().getCivility());
+            address.setCountry(miraklShop.getContactInformation().getCountry());
+            address.setFirstname(row.get("firstName"));
+            address.setLastname(row.get("lastName"));
+            address.setStreet1(miraklShop.getContactInformation().getStreet1());
+            address.setZipCode(row.get("postCode"));
+        } else {
+            address.setCity(row.get("city"));
+            address.setCivility(miraklShop.getContactInformation().getCivility());
+            address.setCountry(miraklShop.getContactInformation().getCountry());
+            address.setFirstname(miraklShop.getContactInformation().getFirstname());
+            address.setLastname(row.get("lastName"));
+            address.setStreet1(miraklShop.getContactInformation().getStreet1());
+            address.setZipCode(miraklShop.getContactInformation().getZipCode());
+        }
         return address;
     }
 

@@ -54,4 +54,9 @@ public class SchedulerTrigger {
         retryPayoutService.retryFailedPayouts();
     }
 
+    @Scheduled(cron = "${application.retryDocsCron}")
+    public void retryDocUpload(){
+        docService.retryFailedDocuments();
+    }
+
 }

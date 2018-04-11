@@ -1,4 +1,3 @@
-@cucumber
 Feature: Payout notifications for seller payout
 
     @ADY-9 @ADY-86
@@ -6,7 +5,7 @@ Feature: Payout notifications for seller payout
         Given a shop has been created in Mirakl for an Individual with mandatory KYC data
             | city   | bank name | iban                   | bankOwnerName | lastName |
             | PASSED | testBank  | GB26TEST40051512347366 | TestData      | TestData |
-        And we process the data and push to Adyen
+        And the connector processes the data and pushes to Adyen
         And a passport has been uploaded to Adyen
         And the accountHolders balance is increased
             | transfer amount |
@@ -19,25 +18,12 @@ Feature: Payout notifications for seller payout
             | currency | amount | statusCode | iban                   |
             | EUR      | 2914.0 | Initiated  | GB26TEST40051512347366 |
 
-    @ADY-9 @ADY-86
-    Scenario: Failure status is received for payout notification
-        Given a shop has been created in Mirakl for an Individual with mandatory KYC data
-            | city   | bank name | iban                   | bankOwnerName | lastName |
-            | PASSED | testBank  | GB26TEST40051512347366 | TestData      | TestData |
-        And we process the data and push to Adyen
-        When a payment voucher is sent to the Connector
-            | paymentVoucher                  |
-            | PaymentVoucher_PayoutShop02.csv |
-        Then adyen will send the ACCOUNT_HOLDER_PAYOUT notification with status
-            | statusCode | message                                           |
-            | Failed     | There is not enough balance available for account |
-
-    @ADY-34 @bug @ADY-111
+    @ADY-34 @ADY-111 @ADY-9 @ADY-86 @ADY-24
     Scenario: The connector forces payout-retry upon accountHolder payable state change
         Given a shop has been created in Mirakl for an Individual with mandatory KYC data
             | city   | bank name | iban                   | bankOwnerName | lastName |
             | PASSED | testBank  | GB26TEST40051512347366 | TestData      | TestData |
-        And we process the data and push to Adyen
+        And the connector processes the data and pushes to Adyen
         And a passport has been uploaded to Adyen
         When a payment voucher is sent to the Connector
             | paymentVoucher                  |
@@ -45,6 +31,11 @@ Feature: Payout notifications for seller payout
         Then adyen will send the ACCOUNT_HOLDER_PAYOUT notification with status
             | statusCode | message                                           |
             | Failed     | There is not enough balance available for account |
+        When the notification is sent to the Connector
+        Then a payout email will be sent to the operator
+        """
+        Account Payout Failed
+        """
         When the accountHolders balance is increased
             | transfer amount |
             | 9900            |
@@ -60,7 +51,7 @@ Feature: Payout notifications for seller payout
         Given a shop has been created in Mirakl for an Individual with mandatory KYC data
             | city   | bank name | iban                   | bankOwnerName | lastName |
             | PASSED | testBank  | GB26TEST40051512347366 | TestData      | TestData |
-        And we process the data and push to Adyen
+        And the connector processes the data and pushes to Adyen
         And the accountHolder receives balance
             | transfer amount   |
             | <transfer amount> |

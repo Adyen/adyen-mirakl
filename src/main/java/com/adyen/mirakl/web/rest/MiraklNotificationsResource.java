@@ -29,6 +29,7 @@ public class MiraklNotificationsResource {
         String content = new String(csvdata.getBytes());
         if (! content.isEmpty()) {
             payoutService.parseMiraklCsv(content);
+            payoutService.processMiraklVoucherEntries();
         }
     }
 

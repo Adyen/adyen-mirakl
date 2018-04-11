@@ -2,11 +2,14 @@ package com.adyen.mirakl.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -41,12 +44,15 @@ public class InvalidFieldsNotificationService {
     @Resource
     private MailTemplateService mailTemplateService;
 
+    @Resource
+    private MessageSource messageSource;
+
     public List<String> getErrorsFromInvalidFields(List<ErrorFieldType> invalidFields) {
         if (CollectionUtils.isEmpty(invalidFields)) {
             return new ArrayList<>();
         }
 
-        return invalidFields.stream().map(InvalidFieldsNotificationService::errorFieldTypeToString).filter(Objects::nonNull).collect(Collectors.toList());
+        return invalidFields.stream().map(this::errorFieldTypeToString).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     public void handleErrorsInResponse(MiraklShop shop, List<ErrorFieldType> invalidFields) {
@@ -64,13 +70,14 @@ public class InvalidFieldsNotificationService {
 
         if (! operatorErrors.isEmpty()) {
             // notify operator
-            log.debug("Sending {} error(s) to Operator", operatorErrors.size());
+            log.debug("Sending {} error(s) to Operator, for shop: {}", operatorErrors.size(), shop.getId());
             mailTemplateService.sendOperatorEmailWithErrors(shop, operatorErrors);
         }
     }
 
-    private static String errorFieldTypeToString(ErrorFieldType errorFieldType) {
+    private String errorFieldTypeToString(ErrorFieldType errorFieldType) {
         StringBuilder sb = new StringBuilder();
+        Locale locale = Locale.getDefault();
 
         final List<Integer> errorDescriptionCodes = ImmutableList.of(ErrorTypeCodes.EMAIL_INVALID,
                                                                      ErrorTypeCodes.COUNTRY_INVALID,
@@ -96,7 +103,16 @@ public class InvalidFieldsNotificationService {
 
         sb.append(errorFieldType.getErrorDescription());
         if (errorFieldType.getFieldType().getField() != null) {
-            sb.append(": ").append(errorFieldType.getFieldType().getField());
+            sb.append(": ");
+            String field = errorFieldType.getFieldType().getField();
+            try {
+                // Use field translation
+                field = messageSource.getMessage(field, null, locale);
+            } catch (NoSuchMessageException e) {
+                log.info("No translation found for field: {}", field);
+                // Append the field name as is if no translation is available
+            }
+            sb.append(field);
         }
         return sb.toString();
     }

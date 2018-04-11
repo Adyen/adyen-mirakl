@@ -1,14 +1,11 @@
 package com.adyen.mirakl.cucumber.stepdefs.helpers.miraklapi;
 
 import com.google.common.collect.ImmutableList;
-import com.mirakl.client.mmp.domain.shop.MiraklShop;
-import com.mirakl.client.mmp.domain.shop.MiraklShops;
 import com.mirakl.client.mmp.operator.core.MiraklMarketplacePlatformOperatorApiClient;
 import com.mirakl.client.mmp.operator.domain.shop.create.MiraklCreateShop;
 import com.mirakl.client.mmp.operator.domain.shop.create.MiraklCreatedShopReturn;
 import com.mirakl.client.mmp.operator.domain.shop.create.MiraklCreatedShops;
 import com.mirakl.client.mmp.operator.request.shop.MiraklCreateShopsRequest;
-import com.mirakl.client.mmp.request.shop.MiraklGetShopsRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -41,6 +38,15 @@ public class MiraklShopApi extends MiraklShopProperties {
         miraklCreateShop = populateMiraklShop(rows, legalEntity, miraklCreateShop);
         ImmutableList.Builder<MiraklCreateShop> miraklCreateShopBuilder = miraklShopCreateBuilder(miraklCreateShop);
         populatePaymentInformation(rows, miraklCreateShop);
+        return createMiraklShopRequest(client, miraklCreateShopBuilder);
+    }
+
+    // Business shop is created with 1 UBO created in non-sequential order
+    public MiraklCreatedShops createBusinessShopWithNonSequentialUBO(MiraklMarketplacePlatformOperatorApiClient client, List<Map<String, String>> rows, String legalEntity) {
+        MiraklCreateShop miraklCreateShop = new MiraklCreateShop();
+        miraklCreateShop = populateMiraklShop(rows, legalEntity, miraklCreateShop);
+        populateShareholderInNonSequentialOrder(legalEntity, rows, miraklCreateShop);
+        ImmutableList.Builder<MiraklCreateShop> miraklCreateShopBuilder = miraklShopCreateBuilder(miraklCreateShop);
         return createMiraklShopRequest(client, miraklCreateShopBuilder);
     }
 
@@ -104,18 +110,4 @@ public class MiraklShopApi extends MiraklShopProperties {
         return shops;
     }
 
-    @Deprecated
-    private MiraklShops getAllMiraklShops(MiraklMarketplacePlatformOperatorApiClient client) {
-        MiraklGetShopsRequest request = new MiraklGetShopsRequest();
-        request.setPaginate(false);
-        return client.getShops(request);
-    }
-
-    @Deprecated
-    public MiraklShop filterMiraklShopsByEmailAndReturnShop(MiraklMarketplacePlatformOperatorApiClient client, String email) {
-        MiraklShops shops = getAllMiraklShops(client);
-        return shops.getShops()
-            .stream().filter(shop -> shop.getContactInformation().getEmail().equalsIgnoreCase(email)).findAny()
-            .orElseThrow(() -> new IllegalStateException("Shop cannot be found."));
-    }
 }

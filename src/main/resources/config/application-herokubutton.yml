@@ -18,16 +18,17 @@ spring:
         hikari:
             maximumPoolSize: 8
 
-
+adyenConfig:
+    environment: TEST
 
 adyenNotificationsConfig:
     notificationConfigurationDetails:
         - active: TRUE
           description: ${HEROKU_APP_NAME}
           messageFormat: JSON
-          notifyURL: https://${HEROKU_APP_NAME}.herokuapp.com/api/adyen-notifications  
-          notifyUsername: ${ADYEN_NOTIFY_USERNAME}
-          notifyPassword: ${ADYEN_NOTIFY_PASSWORD}
+          notifyURL: https://${HEROKU_APP_NAME}.herokuapp.com/api/adyen-notifications
+          notifyUsername: ${NOTIFY_USERNAME}
+          notifyPassword: ${NOTIFY_PASSWORD}
           sslProtocol: TLSV12
           eventConfigs:
             - eventType: ACCOUNT_CREATED

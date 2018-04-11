@@ -1,41 +1,34 @@
 package com.adyen.mirakl.service;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-
-import com.adyen.mirakl.service.util.IsoUtil;
-import org.apache.commons.lang3.EnumUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 import com.adyen.mirakl.domain.ShareholderMapping;
 import com.adyen.mirakl.domain.StreetDetails;
 import com.adyen.mirakl.repository.ShareholderMappingRepository;
 import com.adyen.mirakl.service.dto.UboDocumentDTO;
+import com.adyen.mirakl.service.util.IsoUtil;
 import com.adyen.model.Address;
 import com.adyen.model.Name;
-import com.adyen.model.marketpay.DocumentDetail;
-import com.adyen.model.marketpay.GetAccountHolderResponse;
-import com.adyen.model.marketpay.PersonalData;
-import com.adyen.model.marketpay.PhoneNumber;
-import com.adyen.model.marketpay.ShareholderContact;
+import com.adyen.model.marketpay.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.mirakl.client.mmp.domain.common.MiraklAdditionalFieldValue;
 import com.mirakl.client.mmp.domain.shop.MiraklShop;
 import com.mirakl.client.mmp.domain.shop.MiraklShops;
 import com.mirakl.client.mmp.domain.shop.document.MiraklShopDocument;
 import com.mirakl.client.mmp.operator.core.MiraklMarketplacePlatformOperatorApiClient;
 import com.mirakl.client.mmp.request.shop.MiraklGetShopsRequest;
+import org.apache.commons.lang3.EnumUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+
+import javax.annotation.Resource;
+import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 public class UboService {
@@ -84,12 +77,7 @@ public class UboService {
      * @return share holder contacts to send to adyen
      */
     public List<ShareholderContact> extractUbos(final MiraklShop shop, final GetAccountHolderResponse existingAccountHolder) {
-        Map<String, String> extractedKeysFromMirakl = shop.getAdditionalFieldValues()
-                                                          .stream()
-                                                          .filter(MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue.class::isInstance)
-                                                          .map(MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue.class::cast)
-                                                          .collect(Collectors.toMap(MiraklAdditionalFieldValue::getCode,
-                                                                                    MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue::getValue));
+        Map<String, String> extractedKeysFromMirakl = extractKeysFromMirakl(shop);
 
         ImmutableList.Builder<ShareholderContact> builder = ImmutableList.builder();
         generateMiraklUboKeys(maxUbos).forEach((uboNumber, uboKeys) -> {
@@ -110,14 +98,44 @@ public class UboService {
             String phoneNumber = extractedKeysFromMirakl.getOrDefault(uboKeys.get(PHONE_NUMBER), null);
 
             //do nothing if mandatory fields are missing
-            if (firstName != null && lastName != null && civility != null && email != null) {
+            if (allMandatoryDataIsAvailable(civility, firstName, lastName, email)) {
                 ShareholderContact shareholderContact = new ShareholderContact();
                 addShareholderCode(shop, uboNumber, shareholderContact, existingAccountHolder);
                 addMandatoryData(civility, firstName, lastName, email, shareholderContact);
                 addPersonalData(uboNumber, dateOfBirth, nationality, idNumber, shareholderContact);
-                addAddressData(uboNumber, houseNumberOrName, street, city, postalCode, country, shareholderContact, shop.getContactInformation().getCountry());
+                String shopCountry = shop.getContactInformation().getCountry();
+                addAddressData(uboNumber, houseNumberOrName, street, city, postalCode, country, shareholderContact, shopCountry);
                 addPhoneData(uboNumber, phoneCountryCode, phoneType, phoneNumber, shareholderContact);
                 builder.add(shareholderContact);
+            }
+        });
+        return builder.build();
+    }
+
+    private boolean allMandatoryDataIsAvailable(final String civility, final String firstName, final String lastName, final String email) {
+        return firstName != null && lastName != null && civility != null && email != null;
+    }
+
+    private Map<String, String> extractKeysFromMirakl(final MiraklShop shop) {
+        return shop.getAdditionalFieldValues()
+            .stream()
+            .filter(MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue.class::isInstance)
+            .map(MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue.class::cast)
+            .collect(Collectors.toMap(MiraklAdditionalFieldValue::getCode,
+                MiraklAdditionalFieldValue.MiraklAbstractAdditionalFieldWithSingleValue::getValue));
+    }
+
+
+    public Set<Integer> extractUboNumbersFromShop(final MiraklShop miraklShop) {
+        Map<String, String> extractedKeysFromMirakl = extractKeysFromMirakl(miraklShop);
+        final ImmutableSet.Builder<Integer> builder = ImmutableSet.builder();
+        generateMiraklUboKeys(maxUbos).forEach((uboNumber, uboKeys) -> {
+            String civility = extractedKeysFromMirakl.getOrDefault(uboKeys.get(CIVILITY), null);
+            String firstName = extractedKeysFromMirakl.getOrDefault(uboKeys.get(FIRSTNAME), null);
+            String lastName = extractedKeysFromMirakl.getOrDefault(uboKeys.get(LASTNAME), null);
+            String email = extractedKeysFromMirakl.getOrDefault(uboKeys.get(EMAIL), null);
+            if(allMandatoryDataIsAvailable(civility, firstName, lastName, email)){
+                builder.add(uboNumber);
             }
         });
         return builder.build();
@@ -159,17 +177,18 @@ public class UboService {
                                    final MiraklShopDocument miraklShopDocument,
                                    final int uboNumber,
                                    final Map<Boolean, DocumentDetail.DocumentTypeEnum> documentTypeEnum) {
-        final UboDocumentDTO uboDocumentDTO = new UboDocumentDTO();
-        uboDocumentDTO.setDocumentTypeEnum(documentTypeEnum.values().iterator().next());
-        uboDocumentDTO.setMiraklShopDocument(miraklShopDocument);
-        uboDocumentDTO.setShareholderCode(getShareholderCode(uboNumber, miraklShopDocument.getShopId()));
-        builder.add(uboDocumentDTO);
-    }
 
-    private String getShareholderCode(final int uboNumber, final String shopId) {
-        return shareholderMappingRepository.findOneByMiraklShopIdAndMiraklUboNumber(shopId, uboNumber)
-                                           .orElseThrow(() -> new IllegalStateException("No UBO mapping for " + shopId + uboNumber))
-                                           .getAdyenShareholderCode();
+        final Optional<ShareholderMapping> shareholderMapping = shareholderMappingRepository.findOneByMiraklShopIdAndMiraklUboNumber(miraklShopDocument.getShopId(), uboNumber);
+        if(shareholderMapping.isPresent()){
+            final UboDocumentDTO uboDocumentDTO = new UboDocumentDTO();
+            uboDocumentDTO.setDocumentTypeEnum(documentTypeEnum.values().iterator().next());
+            uboDocumentDTO.setMiraklShopDocument(miraklShopDocument);
+            uboDocumentDTO.setShareholderCode(shareholderMapping.get().getAdyenShareholderCode());
+            builder.add(uboDocumentDTO);
+        }else{
+            log.warn("No shareholder mapping found for ubo: [{}], shop: [{}], skipping uboDocument", uboNumber, miraklShopDocument.getShopId());
+        }
+
     }
 
     private Map<Boolean, DocumentDetail.DocumentTypeEnum> findCorrectEnum(final Map<String, String> internalMemoryForDocs,
@@ -220,23 +239,29 @@ public class UboService {
 
     private void addShareholderCode(final MiraklShop shop, final Integer uboNumber, final ShareholderContact shareholderContact, final GetAccountHolderResponse existingAccountHolder) {
         final Optional<ShareholderMapping> mapping = shareholderMappingRepository.findOneByMiraklShopIdAndMiraklUboNumber(shop.getId(), uboNumber);
-        if (! mapping.isPresent()
+        mapping.ifPresent(shareholderMapping -> shareholderContact.setShareholderCode(shareholderMapping.getAdyenShareholderCode()));
+        if (!mapping.isPresent()
             && existingAccountHolder != null
             && existingAccountHolder.getAccountHolderDetails() != null
             && existingAccountHolder.getAccountHolderDetails().getBusinessDetails() != null
             && ! CollectionUtils.isEmpty(existingAccountHolder.getAccountHolderDetails().getBusinessDetails().getShareholders())) {
             final List<ShareholderContact> shareholders = existingAccountHolder.getAccountHolderDetails().getBusinessDetails().getShareholders();
             if (uboNumber - 1 < shareholders.size()) {
-                final ShareholderMapping shareholderMapping = new ShareholderMapping();
                 final String shareholderCode = shareholders.get(uboNumber - 1).getShareholderCode();
-                shareholderMapping.setAdyenShareholderCode(shareholderCode);
-                shareholderMapping.setMiraklShopId(shop.getId());
-                shareholderMapping.setMiraklUboNumber(uboNumber);
-                shareholderMappingRepository.saveAndFlush(shareholderMapping);
-                shareholderContact.setShareholderCode(shareholderCode);
+                if(mappingDoesNotAlreadyExist(shareholderCode)){
+                    final ShareholderMapping shareholderMapping = new ShareholderMapping();
+                    shareholderMapping.setAdyenShareholderCode(shareholderCode);
+                    shareholderMapping.setMiraklShopId(shop.getId());
+                    shareholderMapping.setMiraklUboNumber(uboNumber);
+                    shareholderMappingRepository.saveAndFlush(shareholderMapping);
+                    shareholderContact.setShareholderCode(shareholderCode);
+                }
             }
         }
-        mapping.ifPresent(shareholderMapping -> shareholderContact.setShareholderCode(shareholderMapping.getAdyenShareholderCode()));
+    }
+
+    private boolean mappingDoesNotAlreadyExist(final String shareholderCode) {
+        return !shareholderMappingRepository.findOneByAdyenShareholderCode(shareholderCode).isPresent();
     }
 
     private void addMandatoryData(final String civility, final String firstName, final String lastName, final String email, final ShareholderContact shareholderContact) {
@@ -266,7 +291,8 @@ public class UboService {
                                 final String city,
                                 final String postalCode,
                                 final String country,
-                                final ShareholderContact shareholderContact, final String contactCountry) {
+                                final ShareholderContact shareholderContact,
+                                final String contactCountry) {
         if (country != null || street != null || houseNumberOrName != null || city != null || postalCode != null) {
             final Address address = new Address();
 

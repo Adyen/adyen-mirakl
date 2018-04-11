@@ -1,11 +1,7 @@
 package com.adyen.mirakl.web.rest;
 
-import com.adyen.mirakl.AdyenMiraklConnectorApp;
-import com.adyen.mirakl.domain.AdyenNotification;
-import com.adyen.mirakl.repository.AdyenNotificationRepository;
-import com.adyen.mirakl.web.rest.errors.ExceptionTranslator;
-import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
+import java.net.URL;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,14 +12,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.security.web.FilterChainProxy;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.net.URL;
-import java.util.List;
-
+import com.adyen.mirakl.AdyenMiraklConnectorApp;
+import com.adyen.mirakl.domain.AdyenNotification;
+import com.adyen.mirakl.repository.AdyenNotificationRepository;
+import com.adyen.mirakl.web.rest.errors.ExceptionTranslator;
+import com.google.common.base.Charsets;
+import com.google.common.io.Resources;
 import static com.adyen.mirakl.web.rest.TestUtil.createFormattingConversionService;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -57,15 +56,20 @@ public class AdyenNotificationResourceIntTest {
 
     private MockMvc restAdyenNotificationMockMvc;
 
+    @Autowired
+    private FilterChainProxy springSecurityFilterChain;
+
     @Before
     public void setup() {
         MockitoAnnotations.initMocks(this);
         final AdyenNotificationResource adyenNotificationResource = new AdyenNotificationResource(adyenNotificationRepository, publisherMock);
         this.restAdyenNotificationMockMvc = MockMvcBuilders.standaloneSetup(adyenNotificationResource)
-            .setCustomArgumentResolvers(pageableArgumentResolver)
-            .setControllerAdvice(exceptionTranslator)
-            .setConversionService(createFormattingConversionService())
-            .setMessageConverters(jacksonMessageConverter).build();
+                                                           .addFilter(springSecurityFilterChain)
+                                                           .setCustomArgumentResolvers(pageableArgumentResolver)
+                                                           .setControllerAdvice(exceptionTranslator)
+                                                           .setConversionService(createFormattingConversionService())
+                                                           .setMessageConverters(jacksonMessageConverter)
+                                                           .build();
     }
 
     @Test
@@ -76,11 +80,10 @@ public class AdyenNotificationResourceIntTest {
 
         int databaseSizeBeforeCreate = adyenNotificationRepository.findAll().size();
 
-        // Create the AdyenNotification
-        restAdyenNotificationMockMvc.perform(post("/api/adyen-notifications")
-            .contentType(TestUtil.APPLICATION_JSON_UTF8)
-            .content(TestUtil.convertObjectToJsonBytes(adyenRequestJson)))
-            .andExpect(status().isCreated());
+        // Create the AdyenNotification - use test:test/dGVzdDp0ZXN0 as credentials
+        restAdyenNotificationMockMvc.perform(post("/api/adyen-notifications").header("Authorization", "Basic dGVzdDp0ZXN0")
+                                                                             .contentType(TestUtil.APPLICATION_JSON_UTF8)
+                                                                             .content(TestUtil.convertObjectToJsonBytes(adyenRequestJson))).andExpect(status().isCreated());
 
         // Validate the AdyenNotification in the database
         List<AdyenNotification> adyenNotificationList = adyenNotificationRepository.findAll();

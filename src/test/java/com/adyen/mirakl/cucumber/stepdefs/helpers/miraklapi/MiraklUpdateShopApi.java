@@ -47,14 +47,24 @@ public class MiraklUpdateShopApi extends MiraklUpdateShopProperties {
         return updateMiraklRequest(client, miraklUpdateShopBuilder);
     }
 
-
-
     public MiraklShop updateUboData(MiraklShop miraklShop, String shopId, MiraklMarketplacePlatformOperatorApiClient client, List<Map<String, String>> rows){
         MiraklUpdateShop miraklUpdateShop = new MiraklUpdateShop();
         miraklUpdateShop = populateAllMandatoryFields(miraklShop, shopId, miraklUpdateShop);
 
         // update UBO data
         ImmutableList.Builder<MiraklSimpleRequestAdditionalFieldValue> updatedShopUboList = updateMiraklShopUbos(rows);
+        populateMiraklAdditionalFields(miraklUpdateShop, miraklShop, updatedShopUboList.build());
+
+        ImmutableList.Builder<MiraklUpdateShop> miraklUpdateShopBuilder = miraklUpdateShopBuilder(miraklUpdateShop);
+        return updateMiraklRequest(client, miraklUpdateShopBuilder);
+    }
+
+    public MiraklShop addSpecificUBOWithData(MiraklShop miraklShop, String shopId, MiraklMarketplacePlatformOperatorApiClient client, List<Map<String, String>> rows){
+        MiraklUpdateShop miraklUpdateShop = new MiraklUpdateShop();
+        miraklUpdateShop = populateAllMandatoryFields(miraklShop, shopId, miraklUpdateShop);
+
+        // update UBO data
+        ImmutableList.Builder<MiraklSimpleRequestAdditionalFieldValue> updatedShopUboList = addUBOToMiraklShop(rows);
         populateMiraklAdditionalFields(miraklUpdateShop, miraklShop, updatedShopUboList.build());
 
         ImmutableList.Builder<MiraklUpdateShop> miraklUpdateShopBuilder = miraklUpdateShopBuilder(miraklUpdateShop);

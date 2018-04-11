@@ -1,5 +1,6 @@
 package com.adyen.mirakl.listeners;
 
+import com.adyen.mirakl.service.DocService;
 import com.adyen.mirakl.service.MailTemplateService;
 import com.adyen.mirakl.domain.AdyenNotification;
 import com.adyen.mirakl.events.AdyenNotifcationEvent;
@@ -61,6 +62,8 @@ public class AdyenNotificationListenerTest {
     private GetAccountHolderResponse getAccountHolderResponseMock;
     @Mock
     private RetryPayoutService retryPayoutService;
+    @Mock
+    private DocService docServiceMock;
     @Captor
     private ArgumentCaptor<MiraklGetShopsRequest> miraklShopsRequestCaptor;
     @Captor
@@ -68,7 +71,7 @@ public class AdyenNotificationListenerTest {
 
     @Before
     public void setup(){
-        adyenNotificationListener = new AdyenNotificationListener(new NotificationHandler(), adyenNotificationRepositoryMock, mailTemplateServiceMock, miraklMarketplacePlatformOperatorApiClient, adyenAccountServiceMock, retryPayoutService);
+        adyenNotificationListener = new AdyenNotificationListener(new NotificationHandler(), adyenNotificationRepositoryMock, mailTemplateServiceMock, miraklMarketplacePlatformOperatorApiClient, adyenAccountServiceMock, retryPayoutService, docServiceMock);
         when(eventMock.getDbId()).thenReturn(1L);
         when(adyenNotificationRepositoryMock.findOneById(1L)).thenReturn(adyenNotificationMock);
     }
@@ -231,5 +234,15 @@ public class AdyenNotificationListenerTest {
         verify(adyenNotificationRepositoryMock).delete(1L);
     }
 
+    @Test
+    public void shouldRemoveMiraklDocsWhenDataProvidedForShareholder() throws IOException {
+        URL url = Resources.getResource("adyenRequests/COMPANY_VERIFICATION_DATA_PROVIDED.json");
+        final String adyenRequestJson = Resources.toString(url, Charsets.UTF_8);
+        when(adyenNotificationMock.getRawAdyenNotification()).thenReturn(adyenRequestJson);
+
+        adyenNotificationListener.handleContextRefresh(eventMock);
+
+        verify(docServiceMock).removeMiraklMediaForShareHolder("c6adfbe1-4794-4e31-9861-9f69dee3a60e");
+    }
 
 }

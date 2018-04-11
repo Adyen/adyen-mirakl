@@ -8,6 +8,8 @@ Feature: Account Holder Created verification emails
         When the Mirakl Shop Details have been updated with invalid data
             | UBO |
             | 1   |
-        And we process the data and push to Adyen
+        And the connector processes the data and pushes to Adyen
         Then an email will be sent to the seller
-
+        """
+        Account verification
+        """

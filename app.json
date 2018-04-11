@@ -1,67 +1,66 @@
 {
-  "name": "adyen-mirakl",
-  "description": "Adyen MarketPay connector for Mirakl",
-  "website": "http://www.adyen.com/",
-  "repository": "https://github.com/e2y/adyen-mirakl",
-  "logo": "https://avatars3.githubusercontent.com/u/9713612?s=200&v=4",
-  "keywords": ["java"],
-  "env": {
-    "HEROKU_APP_NAME" : {
-       "description": "Required for the notification endpoint creation"
+    "name": "adyen-mirakl",
+    "description": "Adyen MarketPay connector for Mirakl",
+    "website": "http://www.adyen.com/",
+    "repository": "https://github.com/e2y/adyen-mirakl",
+    "logo": "https://avatars3.githubusercontent.com/u/9713612?s=200&v=4",
+    "keywords": [
+        "java"
+    ],
+    "env": {
+        "NOTIFY_USERNAME": {
+            "description": "User name for notification endpoint",
+            "value": "admin"
+        },
+        "NOTIFY_PASSWORD": {
+            "description": "Password of the Connector notification endpoint",
+            "generator": "secret"
+        },
+        "ADYEN_USER_NAME": {
+            "description": "User name for Adyen Marketplace Web Service API (format wd_{n}@Marketplace.{account})"
+        },
+        "ADYEN_PASS": {
+            "description": "Password for Adyen Web Service API User found:  https://ca-test.adyen.com/ca/ca/config/users.shtml"
+        },
+        "ADYEN_LIABLE_ACCOUNT_CODE": {
+            "description": "Liable Account Code for the Operator (format LiableAccountHolder{account})",
+            "value": "LiableAccountHolder<account>"
+        },
+        "MIRAKL_ENV_URL": {
+            "description": "The base URL of your Mirakl Environment",
+            "value": "https://<yourproject>-dev.mirakl.net"
+        },
+        "MIRAKL_API_OPERATOR_KEY": {
+            "description": "Operator API key for your Mirakl Environment"
+        },
+        "MIRAKL_OPERATOR_EMAIL": {
+            "description": "The email address of the operator"
+        },
+        "MAIL_HOST": {
+            "description": "Mail host",
+            "value": "smtp.mailtrap.io"
+        },
+        "MAIL_PORT": {
+            "description": "Port for SMTP server",
+            "value": "2525"
+        },
+        "MAIL_USER": {
+            "description": "User, update with smtp user",
+            "required": false
+        },
+        "MAIL_PASS": {
+            "decription": "Update with smtp password",
+            "required": false
+        },
+        "MIRAKL_SDK_USER": {
+            "description": "Your artifactory.mirakl.net user (required to download Mirakl SDK)"
+        },
+        "MIRAKL_SDK_PASSWORD": {
+            "description": "Your artifactory.mirakl.net password"
+        }
     },
-    "ADYEN_ENV" : {
-      "description": "TEST or LIVE",
-      "value": "TEST"
-    },
-    "ADYEN_NOTIFY_USERNAME" : {
-      "description": "User name for notification endpoint",
-      "value": "admin"
-    },
-    "ADYEN_NOTIFY_PASSWORD" : {
-      "description": "Password of the Connector notification endpoint",
-      "generator" : "secret"
-    },
-    "ADYEN_USER_NAME" : {
-      "description": "User name for Adyen Marketplace Web Service API (format wd_{n}@Marketplace.{account})"
-    },
-    "ADYEN_PASS" : {
-      "description": "Password for Adyen Web Service API User found:  https://ca-test.adyen.com/ca/ca/config/users.shtml"
-    },
-    "ADYEN_LIABLE_ACCOUNT_CODE" : {
-      "description": "Liable Account Code for the Operator (format LiableAccountHolder{account})",
-      "value": "LiableAccountHolder<account>"  
-    },
-    "MIRAKL_ENV_URL": {
-      "description": "The base URL of your Mirakl Environment",
-      "value": "https://<yourproject>-dev.mirakl.net"
-    },
-    "MIRAKL_API_OPERATOR_KEY": {
-      "description": "Operator API key for your Mirakl Environment" 
-    },
-    "MAIL_HOST": {
-       "description": "Mail host",
-       "value": "smtp.mailtrap.io"
-    },
-    "MAIL_PORT": {
-        "description": "Port for SMTP server",
-        "value": "2525"
-    },
-    "MAIL_USER": {
-         "description": "User, update with smtp user",
-         "required": false
-    },
-    "MAIL_PASS": {
-          "decription": "Update with smtp password",
-          "required": false
-    },
-    "MIRAKL_SDK_USER": {
-          "description" : "Your artifactory.mirakl.net user (required to download Mirakl SDK)"
-    },
-    "MIRAKL_SDK_PASSWORD": {
-          "description" : "Your artifactory.mirakl.net password"
-    }
-  },
-  "addons": [
-    "jawsdb","mailtrap"
-  ]
+    "addons": [
+        "jawsdb",
+        "mailtrap"
+    ]
 }
