@@ -203,6 +203,7 @@ public class ShopServiceTest {
         Assertions.assertThat(bankAccountDetails.size()).isEqualTo(1);
         final BankAccountDetail bankDetails = bankAccountDetails.iterator().next();
         Assertions.assertThat(bankDetails.getOwnerPostalCode()).isEqualTo("zipCode");
+        Assertions.assertThat(bankDetails.getOwnerCity()).isEqualTo("city");
         Assertions.assertThat(bankDetails.getOwnerName()).isEqualTo("owner");
         Assertions.assertThat(bankDetails.getBankBicSwift()).isEqualTo("BIC");
         Assertions.assertThat(bankDetails.getCountryCode()).isEqualTo("GB");
@@ -299,6 +300,7 @@ public class ShopServiceTest {
         assertEquals("GB00IBAN", request.getAccountHolderDetails().getBankAccountDetails().get(0).getIban());
         assertEquals("BIC", request.getAccountHolderDetails().getBankAccountDetails().get(0).getBankBicSwift());
         assertEquals("1111AA", request.getAccountHolderDetails().getBankAccountDetails().get(0).getOwnerPostalCode());
+        assertEquals("Amsterdam", request.getAccountHolderDetails().getBankAccountDetails().get(0).getOwnerCity());
         assertEquals("BIC", request.getAccountHolderDetails().getBankAccountDetails().get(0).getBankBicSwift());
         assertEquals("610b", request.getAccountHolderDetails().getBankAccountDetails().get(0).getOwnerHouseNumberOrName());
 
@@ -431,6 +433,7 @@ public class ShopServiceTest {
         miraklContactInformation.setLastname("lastName");
         miraklContactInformation.setStreet1("Kosterpark 610b");
         miraklContactInformation.setZipCode("1111AA");
+        miraklContactInformation.setCity("Amsterdam");
         miraklContactInformation.setCountry("NLD");
         miraklContactInformation.setCivility("Mrs");
         return miraklContactInformation;

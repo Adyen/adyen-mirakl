@@ -435,6 +435,7 @@ public class ShopService {
             bankAccountDetail.setOwnerHouseNumberOrName(streetDetails.getHouseNumberOrName());
 
             bankAccountDetail.setOwnerPostalCode(shop.getContactInformation().getZipCode());
+            bankAccountDetail.setOwnerCity(shop.getContactInformation().getCity());
             bankAccountDetail.setOwnerName(shop.getPaymentInformation().getOwner());
         }
 
