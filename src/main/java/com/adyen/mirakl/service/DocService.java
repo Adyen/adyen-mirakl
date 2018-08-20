@@ -36,7 +36,6 @@ import com.adyen.service.Account;
 import com.adyen.service.exception.ApiException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import com.mirakl.client.mmp.domain.common.FileWrapper;
 import com.mirakl.client.mmp.domain.shop.document.MiraklShopDocument;
 import com.mirakl.client.mmp.operator.core.MiraklMarketplacePlatformOperatorApiClient;
@@ -103,17 +102,12 @@ public class DocService {
             if (Constants.BANKPROOF.equals(document.getTypeCode())) {
                 updateDocument(document, DocumentDetail.DocumentTypeEnum.BANK_STATEMENT);
             }else{
+                // The document belongs to a shareholder
                 unprocessed.add(document);
             }
         }
         final List<UboDocumentDTO> uboDocumentDTOS = uboService.extractUboDocuments(miraklShopDocumentList);
-        markMissingDocsAsFailed(uboDocumentDTOS.stream().map(UboDocumentDTO::getMiraklShopDocument).collect(Collectors.toSet()), unprocessed.build());
         uboDocumentDTOS.forEach(uboDocumentDTO -> updateDocument(uboDocumentDTO.getMiraklShopDocument(), uboDocumentDTO.getDocumentTypeEnum(), uboDocumentDTO.getShareholderCode()));
-    }
-
-    private void markMissingDocsAsFailed(final Set<MiraklShopDocument> uboDocsFound, final Set<MiraklShopDocument> unProcessedMiraklShopDocs) {
-        final ImmutableSet<MiraklShopDocument> miraklShopDocumentsFailed = Sets.difference(unProcessedMiraklShopDocs, uboDocsFound).immutableCopy();
-        miraklShopDocumentsFailed.forEach(failed -> storeDocumentForRetry(failed.getId(), failed.getShopId(), "Unable to extract UBO document DTO, check shareholder mapping exists"));
     }
 
     @Async

@@ -77,6 +77,8 @@ public class UboService {
     public static final String PHONE_COUNTRY_CODE = "phonecountry";
     public static final String PHONE_TYPE = "phonetype";
     public static final String PHONE_NUMBER = "phonenumber";
+    public static final String SUFFIX_FRONT = "_FRONT";
+    public static final String SUFFIX_BACK = "_BACK";
 
     public final static Map<String, Name.GenderEnum> CIVILITY_TO_GENDER = ImmutableMap.<String, Name.GenderEnum>builder().put("MR", Name.GenderEnum.MALE)
                                                                                                                          .put("MRS", Name.GenderEnum.FEMALE)
@@ -184,16 +186,20 @@ public class UboService {
         String photoIdFront = ADYEN_UBO + uboNumber + "-photoid";
         String photoIdRear = ADYEN_UBO + uboNumber + "-photoid-rear";
         if (miraklShopDocument.getTypeCode().equalsIgnoreCase(photoIdFront)) {
-            final Map<Boolean, DocumentDetail.DocumentTypeEnum> documentTypeEnum = findCorrectEnum(internalMemoryForDocs, miraklShopDocument, uboNumber, "_FRONT");
+            final Map<Boolean, DocumentDetail.DocumentTypeEnum> documentTypeEnum = findCorrectEnum(internalMemoryForDocs, miraklShopDocument, uboNumber, SUFFIX_FRONT);
             if (documentTypeEnum != null) {
                 addUboDocumentDTO(builder, miraklShopDocument, uboNumber, documentTypeEnum);
+            } else {
+                log.info("DocumentType [{}] is not supported for ubo: [{}], shop: [{}], skipping uboDocument", documentTypeEnum.values().iterator().next(), uboNumber, miraklShopDocument.getShopId());
             }
         }
         if (miraklShopDocument.getTypeCode().equalsIgnoreCase(photoIdRear)) {
-            final Map<Boolean, DocumentDetail.DocumentTypeEnum> documentTypeEnum = findCorrectEnum(internalMemoryForDocs, miraklShopDocument, uboNumber, "_BACK");
-            //ignore if the result is could not convert to enum with suffix
+            final Map<Boolean, DocumentDetail.DocumentTypeEnum> documentTypeEnum = findCorrectEnum(internalMemoryForDocs, miraklShopDocument, uboNumber, SUFFIX_BACK);
+            // If the enum + BACK_SUFFIX is not found as an enum then do not send it across
             if (documentTypeEnum != null && documentTypeEnum.keySet().iterator().next()) {
                 addUboDocumentDTO(builder, miraklShopDocument, uboNumber, documentTypeEnum);
+            } else {
+                log.info("DocumentType [{}] is not supported for ubo: [{}], shop: [{}], skipping uboDocument", documentTypeEnum.values().iterator().next() + SUFFIX_BACK, uboNumber, miraklShopDocument.getShopId());
             }
         }
     }

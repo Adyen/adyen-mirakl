@@ -61,6 +61,7 @@ Feature: Identity verification check
         And the following document will not be uploaded to Adyen
             | documentType | filename         |
             | PASSPORT     | passportBack.png |
+            | PASSPORT     | anotherPassportBack.png |
         When the seller uploads a document in Mirakl
             | front             | back | UBO |
             | passportFront.png |      | 4   |
@@ -68,6 +69,10 @@ Feature: Identity verification check
         Then the updated documents are successfully uploaded to Adyen
             | documentType | filename          |
             | PASSPORT     | passportFront.png |
+        And the following document will not be uploaded to Adyen
+            | documentType | filename         |
+            | PASSPORT     | passportBack.png |
+            | PASSPORT     | anotherPassportBack.png |
         When adyen will send multiple ACCOUNT_HOLDER_VERIFICATION notifications with IDENTITY_VERIFICATION of status DATA_PROVIDED
         And the ACCOUNT_HOLDER_VERIFICATION notifications are sent to Connector App
         Then the documents will be removed for each of the UBOs
