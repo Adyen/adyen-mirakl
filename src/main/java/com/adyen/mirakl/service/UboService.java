@@ -189,8 +189,6 @@ public class UboService {
             final Map<Boolean, DocumentDetail.DocumentTypeEnum> documentTypeEnum = findCorrectEnum(internalMemoryForDocs, miraklShopDocument, uboNumber, SUFFIX_FRONT);
             if (documentTypeEnum != null) {
                 addUboDocumentDTO(builder, miraklShopDocument, uboNumber, documentTypeEnum);
-            } else {
-                log.warn("DocumentType is not supported for ubo: [{}], shop: [{}], skipping uboDocument, please check your documentTypes in your customfields settings on Mirakl", uboNumber, miraklShopDocument.getShopId());
             }
         }
         if (miraklShopDocument.getTypeCode().equalsIgnoreCase(photoIdRear)) {
