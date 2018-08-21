@@ -190,7 +190,7 @@ public class UboService {
             if (documentTypeEnum != null) {
                 addUboDocumentDTO(builder, miraklShopDocument, uboNumber, documentTypeEnum);
             } else {
-                log.info("DocumentType [{}] is not supported for ubo: [{}], shop: [{}], skipping uboDocument", documentTypeEnum.values().iterator().next(), uboNumber, miraklShopDocument.getShopId());
+                log.warn("DocumentType is not supported for ubo: [{}], shop: [{}], skipping uboDocument, please check your documentTypes in your customfields settings on Mirakl", uboNumber, miraklShopDocument.getShopId());
             }
         }
         if (miraklShopDocument.getTypeCode().equalsIgnoreCase(photoIdRear)) {
@@ -198,8 +198,10 @@ public class UboService {
             // If the enum + BACK_SUFFIX is not found as an enum then do not send it across
             if (documentTypeEnum != null && documentTypeEnum.keySet().iterator().next()) {
                 addUboDocumentDTO(builder, miraklShopDocument, uboNumber, documentTypeEnum);
-            } else {
+            } else if(documentTypeEnum != null){
                 log.info("DocumentType [{}] is not supported for ubo: [{}], shop: [{}], skipping uboDocument", documentTypeEnum.values().iterator().next() + SUFFIX_BACK, uboNumber, miraklShopDocument.getShopId());
+            } else {
+                log.warn("DocumentType is not supported for ubo: [{}], shop: [{}], skipping uboDocument, please check your documentTypes in your customfields settings on Mirakl", uboNumber, miraklShopDocument.getShopId());
             }
         }
     }
