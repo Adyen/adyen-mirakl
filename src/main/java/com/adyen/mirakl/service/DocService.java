@@ -97,13 +97,9 @@ public class DocService {
     }
 
     private void processDocs(final List<MiraklShopDocument> miraklShopDocumentList) {
-        final ImmutableSet.Builder<MiraklShopDocument> unprocessed = ImmutableSet.builder();
         for (MiraklShopDocument document : miraklShopDocumentList) {
             if (Constants.BANKPROOF.equals(document.getTypeCode())) {
                 updateDocument(document, DocumentDetail.DocumentTypeEnum.BANK_STATEMENT);
-            }else{
-                // The document belongs to a shareholder
-                unprocessed.add(document);
             }
         }
         final List<UboDocumentDTO> uboDocumentDTOS = uboService.extractUboDocuments(miraklShopDocumentList);
