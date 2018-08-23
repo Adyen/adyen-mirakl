@@ -105,6 +105,7 @@ application:
     retryDocsCron: "0 */1 * * * ?"
     initialDeltaDaysBack: 0
     maxPayoutFailed: 10
+    maxDocRetries: 10
     houseNumbersRegex:
         NL: "\\s([a-zA-Z]*\\d+[a-zA-Z]*)$"
     basicUsername: test

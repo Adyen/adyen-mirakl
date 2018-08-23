@@ -42,4 +42,6 @@ public interface DocRetryRepository extends JpaRepository<DocRetry, Long> {
 
     List<DocRetry> findByShopId(String shopId);
 
+    List<DocRetry> findByTimesFailedLessThanEqual(Integer timesFailed);
+
 }

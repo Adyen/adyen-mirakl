@@ -22,13 +22,12 @@
 
 package com.adyen.mirakl.config;
 
-import com.google.common.collect.ImmutableMap;
+import java.util.Map;
+import java.util.regex.Pattern;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.Map;
-import java.util.regex.Pattern;
+import com.google.common.collect.ImmutableMap;
 
 /**
  * Properties specific to Adyen Mirakl Connector.
@@ -45,12 +44,13 @@ public class ApplicationProperties {
     private String retryDocsCron;
     private Integer initialDeltaDaysBack;
     private Integer maxPayoutFailed;
+    private Integer maxDocRetries;
     private Map<String, String> houseNumbersRegex;
     private String basicUsername;
     private String basicPassword;
 
     @Bean
-    public Map<String, Pattern> houseNumberPatterns(){
+    public Map<String, Pattern> houseNumberPatterns() {
         final ImmutableMap.Builder<String, Pattern> builder = ImmutableMap.builder();
         houseNumbersRegex.forEach((k, v) -> builder.put(k, Pattern.compile(v)));
         return builder.build();
@@ -102,6 +102,14 @@ public class ApplicationProperties {
 
     public void setMaxPayoutFailed(Integer maxPayoutFailed) {
         this.maxPayoutFailed = maxPayoutFailed;
+    }
+
+    public Integer getMaxDocRetries() {
+        return maxDocRetries;
+    }
+
+    public void setMaxDocRetries(Integer maxDocRetries) {
+        this.maxDocRetries = maxDocRetries;
     }
 
     public Map<String, String> getHouseNumbersRegex() {

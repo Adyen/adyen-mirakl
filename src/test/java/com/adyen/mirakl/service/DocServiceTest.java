@@ -22,6 +22,7 @@
 
 package com.adyen.mirakl.service;
 
+import com.adyen.mirakl.config.ApplicationProperties;
 import com.adyen.mirakl.config.Constants;
 import com.adyen.mirakl.domain.DocError;
 import com.adyen.mirakl.domain.DocRetry;
@@ -93,6 +94,8 @@ public class DocServiceTest {
     private DocErrorRepository docErrorRepositoryMock;
     @Mock
     private DocRetry docRetryMock1, docRetryMock2;
+    @Mock
+    private ApplicationProperties applicationPropertiesMock;
     @Captor
     private ArgumentCaptor<UploadDocumentRequest> uploadDocumentRequestCaptor;
     @Captor
@@ -253,7 +256,7 @@ public class DocServiceTest {
     @Test
     public void shouldFilterShopDocsById(){
 
-        when(docRetryRepositoryMock.findAll()).thenReturn(ImmutableList.of(docRetryMock1));
+        when(docRetryRepositoryMock.findByTimesFailedLessThanEqual(isA(Integer.class))).thenReturn(ImmutableList.of(docRetryMock1));
         when(docRetryMock1.getDocId()).thenReturn("docId1");
         when(docRetryMock1.getShopId()).thenReturn("shopId1");
 
