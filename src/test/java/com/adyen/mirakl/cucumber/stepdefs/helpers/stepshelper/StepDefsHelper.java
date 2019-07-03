@@ -25,6 +25,7 @@ package com.adyen.mirakl.cucumber.stepdefs.helpers.stepshelper;
 import java.io.File;
 import java.net.URL;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -74,6 +75,7 @@ import com.adyen.service.exception.ApiException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.JsonPath;
 import com.mirakl.client.mmp.domain.shop.MiraklShop;
 import com.mirakl.client.mmp.domain.shop.MiraklShops;
 import com.mirakl.client.mmp.operator.core.MiraklMarketplacePlatformOperatorApiClient;
@@ -350,11 +352,23 @@ public class StepDefsHelper {
         });
     }
 
-    protected void validationCheckOnReceivedEmails(String title, MiraklShop shop) throws Exception {
+    protected void validationCheckOnIndividualEmails(String title, MiraklShop shop) throws Exception {
+        GetAccountHolderResponse accountHolder = retrieveAccountHolderResponse(shop.getId());
+
+        String accountEmail = accountHolder.getAccountHolderDetails().getEmail();
+
+        validationCheckOnReceivedEmails(title, shop, Collections.singletonList(accountEmail));
+    }
+
+    protected void validationCheckOnUboEmails(String title, MiraklShop shop) throws Exception {
         GetAccountHolderResponse accountHolder = retrieveAccountHolderResponse(shop.getId());
 
         List<String> uboEmails = accountHolder.getAccountHolderDetails().getBusinessDetails().getShareholders().stream().map(ShareholderContact::getEmail).collect(Collectors.toList());
 
+        validationCheckOnReceivedEmails(title, shop, uboEmails);
+    }
+
+    private void validationCheckOnReceivedEmails(String title, MiraklShop shop, List<String> emailAddresses) {
         AtomicReference<List<String>> atomicReference = new AtomicReference<>();
 
         await().with().pollInterval(fibonacci()).untilAsserted(() -> {
@@ -365,19 +379,19 @@ public class StepDefsHelper {
             }
             Assertions.assertThat(response).isNotEqualToIgnoringCase("{\"error\":\"Throttled\"}");
 
-            List<Map<String, Object>> emails = responseBody.jsonPath().getList("");
-            Assertions.assertThat(emails).size().isGreaterThan(0);
+            List<Map<String, Object>> receivedEmails = responseBody.jsonPath().getList("");
+            Assertions.assertThat(receivedEmails).size().isGreaterThan(0);
 
-            boolean foundEmail = emails.stream().anyMatch(map -> map.get("to_email").equals(uboEmails.iterator().next()));
+            boolean foundEmail = receivedEmails.stream().anyMatch(map -> map.get("to_email").equals(emailAddresses.iterator().next()));
             Assertions.assertThat(foundEmail).isTrue();
 
             List<String> htmlPath = new LinkedList<>();
-            for (String uboEmail : uboEmails) {
-                emails.stream().filter(map -> map.get("to_email").equals(uboEmail)).findAny().ifPresent(map -> htmlPath.add(map.get("html_path").toString()));
+            for (String email : emailAddresses) {
+                receivedEmails.stream().filter(map -> map.get("to_email").equals(email)).findAny().ifPresent(map -> htmlPath.add(map.get("html_path").toString()));
             }
 
             Assertions.assertThat(htmlPath).isNotEmpty();
-            Assertions.assertThat(htmlPath).hasSize(uboEmails.size());
+            Assertions.assertThat(htmlPath).hasSize(emailAddresses.size());
             atomicReference.set(htmlPath);
         });
 
@@ -424,6 +438,22 @@ public class StepDefsHelper {
                       .isEqualTo(shareholderCodes.size());
 
             atomicReference.set(verificationNotifications);
+        });
+        return atomicReference.get();
+    }
+
+    protected ImmutableList<DocumentContext> assertOnVerificationNotification(String eventType, String verificationType, String verificationStatus, MiraklShop shop) throws Exception {
+        waitForNotification();
+
+        // get all ACCOUNT_HOLDER_VERIFICATION notifications
+        AtomicReference<ImmutableList<DocumentContext>> atomicReference = new AtomicReference<>();
+        await().untilAsserted(() -> {
+            List<DocumentContext> notifications = restAssuredAdyenApi.getMultipleAdyenNotificationBodies(startUpTestingHook.getBaseRequestBinUrlPath(), shop.getId(), eventType, verificationType, verificationStatus);
+            Assertions.assertThat(notifications).withFailMessage("Notification is empty.").isNotEmpty();
+
+            ImmutableList.Builder<DocumentContext> notificationsBuilder = new ImmutableList.Builder<>();
+            notificationsBuilder.addAll(notifications);
+            atomicReference.set(notificationsBuilder.build());
         });
         return atomicReference.get();
     }

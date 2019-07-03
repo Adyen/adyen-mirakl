@@ -79,6 +79,29 @@ Feature: Identity verification check
         And the ACCOUNT_HOLDER_VERIFICATION notifications are sent to Connector App
         Then the documents are removed for each of the UBOs
 
+    @PW-1406
+    Scenario: Individual data is passed to Adyen to perform KYC Identity Check
+        Given a shop has been created with full data for a Individual
+            | lastName |
+            | TestData |
+        And the connector processes the data and pushes to Adyen
+        Then adyen will send a ACCOUNT_HOLDER_VERIFICATION notification with IDENTITY_VERIFICATION of status DATA_PROVIDED
+
+    @PW-1406
+    Scenario: Individual mandatory information is not provided therefore Identity Check will return AWAITING_DATA
+        Given a shop has been created with full data for a Individual
+            | lastName |
+            | TestData |
+        And the connector processes the data and pushes to Adyen
+        And the shop is updated to tier1
+        Then adyen will send a ACCOUNT_HOLDER_VERIFICATION notification with IDENTITY_VERIFICATION of status AWAITING_DATA
+        When the ACCOUNT_HOLDER_VERIFICATION notifications are sent to Connector App
+        Then the individual will receive a remedial email
+        """
+        Account verification, awaiting data
+        """
+
+    @PW-1406
     Scenario: Uploading a new photo Id/Updating photo Id for individual to complete Identity Checks
         Given a shop has been created with full data for a Individual
             | lastName |
@@ -97,3 +120,7 @@ Feature: Identity verification check
         And the following document will not be uploaded to Adyen
             | documentType | filename         |
             | PASSPORT     | passportBack.png |
+        And the shop is updated to tier1
+        Then adyen will send a ACCOUNT_HOLDER_VERIFICATION notification with PASSPORT_VERIFICATION of status PASSED
+        And the ACCOUNT_HOLDER_VERIFICATION notifications are sent to Connector App
+        Then the documents are removed for Individual

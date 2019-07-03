@@ -25,10 +25,9 @@ package com.adyen.mirakl.service;
 import com.adyen.mirakl.config.Constants;
 import com.adyen.mirakl.config.MiraklOperatorConfiguration;
 import com.adyen.model.Amount;
+import com.adyen.model.Name;
 import com.adyen.model.marketpay.Message;
-import com.adyen.model.marketpay.ShareholderContact;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.mirakl.client.domain.common.error.ErrorBean;
 import com.mirakl.client.mmp.domain.shop.MiraklShop;
 import com.mirakl.client.mmp.domain.shop.MiraklShops;
@@ -55,7 +54,7 @@ public class MailTemplateService {
     private static final String MIRAKL_CALL_BACK_SHOP_URL = "miraklCallBackShopUrl";
     private static final String BASE_URL = "baseUrl";
     private static final String ERRORS = "errors";
-    private static final String SHAREHOLDER = "shareholder";
+    private static final String NAME = "name";
     private static final String PAYOUT_ERROR = "payoutError";
     private static final String TRANSFER_FUNDS_AMOUNT = "transferFundsAmount";
     private static final String TRANSFER_FUNDS_CODE = "transferFundsCode";
@@ -108,14 +107,14 @@ public class MailTemplateService {
     }
 
     @Async
-    public void sendShareholderEmailFromTemplate(final ShareholderContact shareholder, String shopId, Locale locale, String templateName, String titleKey) {
+    public void sendShareholderEmailFromTemplate(final Name name, String shopId, Locale locale, String templateName, String titleKey, String toEmail) {
         Context context = new Context(locale);
-        context.setVariable(SHAREHOLDER, shareholder);
+        context.setVariable(NAME, name);
         context.setVariable(BASE_URL, jHipsterProperties.getMail().getBaseUrl());
         context.setVariable(MIRAKL_CALL_BACK_SHOP_URL, getMiraklShopUrl(shopId));
         String content = templateEngine.process(templateName, context);
         String subject = messageSource.getMessage(titleKey, null, locale);
-        mailService.sendEmail(shareholder.getEmail(), subject, content, false, true);
+        mailService.sendEmail(toEmail, subject, content, false, true);
     }
 
     @Async

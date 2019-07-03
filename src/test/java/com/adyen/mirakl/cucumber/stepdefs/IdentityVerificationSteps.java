@@ -104,6 +104,13 @@ public class IdentityVerificationSteps extends StepDefsHelper {
         notifications = assertOnMultipleVerificationNotifications(eventType, verificationType, verificationStatus, shop);
     }
 
+    @Then("^adyen will send a (.*) notification with (.*) of status (.*)$")
+    public void adyenWillSendACCOUNT_HOLDER_VERIFICATIONNotificationWithPASSPORT_VERIFICATIONOfStatusPASSED(String eventType,
+                                                                                                                    String verificationType,
+                                                                                                                    String verificationStatus) throws Exception {
+        notifications = assertOnVerificationNotification(eventType, verificationType, verificationStatus, shop);
+    }
+
     @Then("^adyen will send the (.*) notification with multiple (.*) of status (.*)")
     public void adyenWillSendTheACCOUNT_HOLDER_UPDATEDNotificationWithMultipleIDENTITY_VERIFICATIONOfStatusDATA_PROVIDED(String eventType, String verificationType, String verificationStatus) {
         waitForNotification();
@@ -205,8 +212,8 @@ public class IdentityVerificationSteps extends StepDefsHelper {
         }
     }
 
-    @Then("^the documents are removed for each of the UBOs$")
-    public void theDocumentsAreRemovedForEachOfTheUBOs() {
+    @Then("^the documents are removed for (.*)$")
+    public void theDocumentsAreRemoved(String legalEntity) {
         await().with().pollInterval(fibonacci()).untilAsserted(() -> {
             Assertions.assertThat(adyenNotificationRepository.findAll().size()).isEqualTo(0);
         });
@@ -217,9 +224,13 @@ public class IdentityVerificationSteps extends StepDefsHelper {
 
     @Then("^each UBO will receive a remedial email$")
     public void eachUBOWillReceiveARemedialEmail(String title) throws Throwable {
-        validationCheckOnReceivedEmails(title, shop);
+        validationCheckOnUboEmails(title, shop);
     }
 
+    @Then("^the individual will receive a remedial email$")
+    public void theIndividualWillReceiveARemedialEmail(String title) throws Throwable {
+        validationCheckOnIndividualEmails(title, shop);
+    }
 
     @And("^the shop is updated to tier1$")
     public void theShopIsUpdatedToTier1() throws Exception {

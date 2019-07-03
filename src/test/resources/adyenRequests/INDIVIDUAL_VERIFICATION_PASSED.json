@@ -1,0 +1,17 @@
+{
+    "eventDate": "2019-07-03T16:53:31+02:00",
+    "eventType": "ACCOUNT_HOLDER_VERIFICATION",
+    "executingUserKey": "Account Holder Verification",
+    "live": "false",
+    "pspReference": "8815621656088202",
+    "content": {
+        "accountHolderCode": "22057",
+        "kycCheckStatusData": {
+            "type": "PASSPORT_VERIFICATION",
+            "status": "PASSED"
+        },
+        "statusSummaryItems": [],
+        "verificationStatus": "PASSED",
+        "verificationType": "PASSPORT_VERIFICATION"
+    }
+}

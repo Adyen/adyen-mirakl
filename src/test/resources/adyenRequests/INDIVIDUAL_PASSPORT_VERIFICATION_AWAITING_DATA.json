@@ -1,0 +1,20 @@
+{
+    "eventDate": "2019-07-03T17:02:43+02:00",
+    "eventType": "ACCOUNT_HOLDER_VERIFICATION",
+    "executingUserKey": "Account Holder Update",
+    "live": "false",
+    "pspReference": "8815621661622565",
+    "content": {
+        "accountHolderCode": "22058",
+        "kycCheckStatusData": {
+            "type": "IDENTITY_VERIFICATION",
+            "status": "AWAITING_DATA",
+            "requiredFields": [
+                "AccountHolderDetails.PhoneNumber.phoneNumber"
+            ]
+        },
+        "statusSummaryItems": [],
+        "verificationStatus": "AWAITING_DATA",
+        "verificationType": "PASSPORT_VERIFICATION"
+    }
+}

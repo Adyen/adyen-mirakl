@@ -26,6 +26,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Resource;
@@ -66,6 +67,9 @@ import static com.google.common.io.Files.toByteArray;
 public class DocService {
 
     private final Logger log = LoggerFactory.getLogger(DocService.class);
+
+    private static final String UBO_ENTITY_TYPE = "ubo";
+    private static final String INDIVIDUAL_ENTITY_TYPE = "individual";
 
     @Resource
     private MiraklMarketplacePlatformOperatorApiClient miraklMarketplacePlatformOperatorApiClient;
@@ -267,7 +271,7 @@ public class DocService {
         ShareholderMapping shareholderMapping = shareholderMappingRepository.findOneByAdyenShareholderCode(shareHolderCode)
                                                                             .orElseThrow(() -> new IllegalStateException("No shareholder mapping found for shareholder code: " + shareHolderCode));
         final List<MiraklShopDocument> shopDocuments = miraklMarketplacePlatformOperatorApiClient.getShopDocuments(new MiraklGetShopDocumentsRequest(ImmutableList.of(shareholderMapping.getMiraklShopId())));
-        List<String> documentIdsToDelete = extractDocumentsToDelete(shopDocuments, shareholderMapping.getMiraklUboNumber());
+        List<String> documentIdsToDelete = extractDocumentsToDelete(shopDocuments, UBO_ENTITY_TYPE, shareholderMapping.getMiraklUboNumber());
 
         documentIdsToDelete.forEach(docIdToDel -> {
             final MiraklDeleteShopDocumentRequest request = new MiraklDeleteShopDocumentRequest(docIdToDel);
@@ -275,8 +279,18 @@ public class DocService {
         });
     }
 
-    private List<String> extractDocumentsToDelete(final List<MiraklShopDocument> shopDocuments, Integer uboNumber) {
-        String uboStartingTypeCode = "adyen-ubo" + uboNumber;
+    public void removeMiraklMediaForIndividual(final String shopId) {
+        final List<MiraklShopDocument> shopDocuments = miraklMarketplacePlatformOperatorApiClient.getShopDocuments(new MiraklGetShopDocumentsRequest(ImmutableList.of(shopId)));
+        List<String> documentIdsToDelete = extractDocumentsToDelete(shopDocuments, INDIVIDUAL_ENTITY_TYPE, null);
+
+        documentIdsToDelete.forEach(docIdToDel -> {
+            final MiraklDeleteShopDocumentRequest request = new MiraklDeleteShopDocumentRequest(docIdToDel);
+            miraklMarketplacePlatformOperatorApiClient.deleteShopDocument(request);
+        });
+    }
+
+    private List<String> extractDocumentsToDelete(final List<MiraklShopDocument> shopDocuments, String entityType, Integer uboNumber) {
+        String uboStartingTypeCode = "adyen-" + entityType + Objects.toString(uboNumber, "");
         return shopDocuments.stream().filter(x -> x.getTypeCode().startsWith(uboStartingTypeCode)).map(MiraklShopDocument::getId).collect(Collectors.toList());
     }
 

@@ -39,8 +39,10 @@ import com.adyen.mirakl.service.DocService;
 import com.adyen.mirakl.service.MailTemplateService;
 import com.adyen.mirakl.service.RetryPayoutService;
 import com.adyen.mirakl.service.ShopService;
+import com.adyen.model.Name;
 import com.adyen.model.marketpay.GetAccountHolderRequest;
 import com.adyen.model.marketpay.GetAccountHolderResponse;
+import com.adyen.model.marketpay.KYCCheckStatusData;
 import com.adyen.model.marketpay.ShareholderContact;
 import com.adyen.model.marketpay.notification.AccountHolderPayoutNotification;
 import com.adyen.model.marketpay.notification.AccountHolderStatusChangeNotification;
@@ -198,31 +200,67 @@ public class AdyenNotificationListener {
             final MiraklShop shop = getShop(shopId);
             mailTemplateService.sendMiraklShopEmailFromTemplate(shop, Locale.getDefault(), "bankAccountVerificationEmail", "email.bank.verification.title");
         } else if (awaitingDataForIdentityOrPassport(verificationStatus, verificationType) || invalidDataForIdentityOrPassport(verificationStatus, verificationType)) {
-            final GetAccountHolderRequest getAccountHolderRequest = new GetAccountHolderRequest();
-            getAccountHolderRequest.setAccountHolderCode(shopId);
-            final GetAccountHolderResponse accountHolderResponse = adyenAccountService.getAccountHolder(getAccountHolderRequest);
-            final String shareholderCode = verificationNotification.getContent().getShareholderCode();
-            final ShareholderContact shareholderContact = accountHolderResponse.getAccountHolderDetails()
-                                                                               .getBusinessDetails()
-                                                                               .getShareholders()
-                                                                               .stream()
-                                                                               .filter(x -> x.getShareholderCode().equals(shareholderCode))
-                                                                               .findAny()
-                                                                               .orElseThrow(() -> new IllegalStateException("Unable to find shareholder: " + shareholderCode));
-            mailTemplateService.sendShareholderEmailFromTemplate(shareholderContact,
-                                                                 shopId,
-                                                                 Locale.getDefault(),
-                                                                 getTemplate(verificationType, verificationStatus),
-                                                                 getSubject(verificationType, verificationStatus));
+            final GetAccountHolderResponse accountHolderResponse = getAccountHolder(shopId);
+            if (GetAccountHolderResponse.LegalEntityEnum.BUSINESS.equals(accountHolderResponse.getLegalEntity())) {
+                sendBusinessShareholderAwaitingDataEmail(verificationNotification, verificationStatus, verificationType, shopId, accountHolderResponse);
+            } else if (GetAccountHolderResponse.LegalEntityEnum.INDIVIDUAL.equals(accountHolderResponse.getLegalEntity())) {
+                sendIndividualAwaitingDataEmail(verificationStatus, verificationType, shopId, accountHolderResponse);
+            }
         } else if (invalidOrAwaitingCompanyVerificationData(verificationStatus, verificationType)) {
             final MiraklShop shop = getShop(shopId);
             mailTemplateService.sendMiraklShopEmailFromTemplate(shop, Locale.getDefault(), getTemplate(verificationType, verificationStatus), getSubject(verificationType, verificationStatus));
         } else if (dataProvidedForPassportOrIdentity(verificationStatus, verificationType, CheckStatusEnum.PASSED, CheckTypeEnum.PASSPORT_VERIFICATION, CheckTypeEnum.IDENTITY_VERIFICATION)) {
-            docService.removeMiraklMediaForShareHolder(verificationNotification.getContent().getShareholderCode());
+            final GetAccountHolderResponse accountHolderResponse = getAccountHolder(shopId);
+            if (GetAccountHolderResponse.LegalEntityEnum.BUSINESS.equals(accountHolderResponse.getLegalEntity())) {
+                docService.removeMiraklMediaForShareHolder(verificationNotification.getContent().getShareholderCode());
+            } else if (GetAccountHolderResponse.LegalEntityEnum.INDIVIDUAL.equals(accountHolderResponse.getLegalEntity())) {
+                docService.removeMiraklMediaForIndividual(shopId);
+            }
         } else if (CheckStatusEnum.PASSED.equals(verificationStatus) && CheckTypeEnum.BANK_ACCOUNT_VERIFICATION.equals(verificationType)) {
             docService.removeMiraklMediaForBankProof(verificationNotification.getContent().getAccountHolderCode());
         }
 
+    }
+
+    private GetAccountHolderResponse getAccountHolder(String shopId) throws Exception {
+        final GetAccountHolderRequest getAccountHolderRequest = new GetAccountHolderRequest();
+        getAccountHolderRequest.setAccountHolderCode(shopId);
+        return adyenAccountService.getAccountHolder(getAccountHolderRequest);
+    }
+
+    private void sendBusinessShareholderAwaitingDataEmail(AccountHolderVerificationNotification verificationNotification,
+                                                          CheckStatusEnum verificationStatus,
+                                                          CheckTypeEnum verificationType,
+                                                          String shopId,
+                                                          GetAccountHolderResponse accountHolderResponse) {
+        final String shareholderCode = verificationNotification.getContent().getShareholderCode();
+        final ShareholderContact shareholderContact = accountHolderResponse.getAccountHolderDetails()
+                                                                           .getBusinessDetails()
+                                                                           .getShareholders()
+                                                                           .stream()
+                                                                           .filter(x -> x.getShareholderCode().equals(shareholderCode))
+                                                                           .findAny()
+                                                                           .orElseThrow(() -> new IllegalStateException("Unable to find shareholder: " + shareholderCode));
+        mailTemplateService.sendShareholderEmailFromTemplate(shareholderContact.getName(),
+                                                             shopId,
+                                                             Locale.getDefault(),
+                                                             getTemplate(verificationType, verificationStatus),
+                                                             getSubject(verificationType, verificationStatus),
+                                                             shareholderContact.getEmail());
+    }
+
+    private void sendIndividualAwaitingDataEmail(CheckStatusEnum verificationStatus,
+                                                 CheckTypeEnum verificationType,
+                                                 String shopId,
+                                                 GetAccountHolderResponse accountHolderResponse) {
+        final Name individualName = accountHolderResponse.getAccountHolderDetails().getIndividualDetails().getName();
+        final String individualEmail = accountHolderResponse.getAccountHolderDetails().getEmail();
+        mailTemplateService.sendShareholderEmailFromTemplate(individualName,
+                                                             shopId,
+                                                             Locale.getDefault(),
+                                                             getTemplate(verificationType, verificationStatus),
+                                                             getSubject(verificationType, verificationStatus),
+                                                             individualEmail);
     }
 
     private boolean dataProvidedForPassportOrIdentity(final CheckStatusEnum verificationStatus,

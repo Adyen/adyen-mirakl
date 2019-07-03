@@ -178,7 +178,7 @@ public class ConnectorAppAdyenSteps extends StepDefsHelper {
 
     @Then("^a remedial email will be sent for each ubo$")
     public void aRemedialEmailWillBeSentForEachUbo(String title) throws Throwable {
-        validationCheckOnReceivedEmails(title, shop);
+        validationCheckOnUboEmails(title, shop);
     }
 
     @When("^a payment of (.*) (.*) has been authorised$")
