@@ -42,7 +42,7 @@ import com.mirakl.client.mmp.operator.core.MiraklMarketplacePlatformOperatorApiC
 import com.mirakl.client.mmp.request.shop.MiraklGetShopsRequest;
 
 @Service
-public abstract class AbstractDocumentService<T> {
+public abstract class AbstractDocumentService<T extends DocumentDTO> {
 
     private final Logger log = LoggerFactory.getLogger(AbstractDocumentService.class);
 
