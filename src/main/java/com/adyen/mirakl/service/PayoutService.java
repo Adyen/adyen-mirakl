@@ -23,13 +23,11 @@
 package com.adyen.mirakl.service;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.List;
 import javax.annotation.Resource;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -152,7 +150,9 @@ public class PayoutService {
             log.info("Payout submitted for commission for accountHolder: [{}] + Psp ref: [{}]", payoutAccountHolderResponse.toString(), payoutAccountHolderResponse.getPspReference());
         } catch (ApiException e) {
             log.error("MarketPay Api Exception for commission payout: {}, {}. For the LiableAccount: {} ", e.getError(),e, liableAccountCode);
-            storeAdyenPayoutError(payoutAccountHolderRequest, payoutAccountHolderResponse, null);
+            if (isAllowedToRetryAfterApiException(e)) {
+                storeAdyenPayoutError(payoutAccountHolderRequest, payoutAccountHolderResponse, null);
+            }
         } catch (Exception e) {
             log.error("Exception: {}, {}. For the LiableAccount: {} ", e.getMessage(), e, liableAccountCode);
             storeAdyenPayoutError(payoutAccountHolderRequest, payoutAccountHolderResponse, null);
@@ -182,7 +182,9 @@ public class PayoutService {
             log.info("Payout submitted for accountHolder: [{}] + Psp ref: [{}]", accountHolderCode, payoutAccountHolderResponse.getPspReference());
         } catch (ApiException e) {
             log.error("MarketPay Api Exception: {}, {}. For the Shop: {}", e.getError(), e, accountHolderCode);
-            storeAdyenPayoutError(payoutAccountHolderRequest, payoutAccountHolderResponse, transferFundsRequest);
+            if (isAllowedToRetryAfterApiException(e)) {
+                storeAdyenPayoutError(payoutAccountHolderRequest, payoutAccountHolderResponse, transferFundsRequest);
+            }
         } catch (Exception e) {
             log.error("Exception: {}, {}. For the Shop: {}", e.getMessage(), e, accountHolderCode);
             storeAdyenPayoutError(payoutAccountHolderRequest, payoutAccountHolderResponse, transferFundsRequest);
@@ -297,5 +299,8 @@ public class PayoutService {
         return transferFundsRequest;
     }
 
-
+    private boolean isAllowedToRetryAfterApiException(ApiException apiException) {
+        // Exception case: if Adyen responds with HTTP 500 (Internal Server Error), never retry the payout; Adyen will retry internally automatically.
+        return apiException.getStatusCode() != 500;
+    }
 }

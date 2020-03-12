@@ -187,6 +187,7 @@ public class PayoutServiceTest {
         miraklVoucherEntry.setCurrencyIsoCode("EUR");
         payoutService.processMiraklVoucherEntry(miraklVoucherEntry);
 
-        verify(adyenPayoutErrorRepository).save(isA(AdyenPayoutError.class));
+        // We shouldn't retry on HTTP 500 (Internal Server Error) from Adyen
+        verify(adyenPayoutErrorRepository, never()).save(any(AdyenPayoutError.class));
     }
 }
