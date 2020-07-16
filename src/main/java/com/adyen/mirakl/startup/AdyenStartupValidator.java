@@ -60,8 +60,14 @@ public class AdyenStartupValidator implements ApplicationListener<ContextRefresh
             //but is not invoked as the NotificationConfigurationDetails.getEventConfigs creates a new list which we can add to
             notificationConfigurationDetails.forEach(x -> x.setEventConfigs(x.getEventConfigs()));
             sync();
-        }catch (ApiException e){
-            throw new IllegalStateException(String.format("Unable to sync Adyen notification configuration: %s", e.getError()), e);
+        } catch (ApiException e) {
+            if (e.getError() == null && e.getStatusCode() == 401) {
+                // The ApiException does not have an error message in case of HTTP status code 401.
+                // As this should only occur in case of misconfiguration (e.g., invalid credentials), let's be more explicit in the newly thrown exception.
+                throw new IllegalStateException("Unable to sync Adyen notification configuration: Caught HTTP error 401. Are your Adyen MarketPlace credentials correct?", e);
+            } else {
+                throw new IllegalStateException(String.format("Unable to sync Adyen notification configuration: %s (HTTP status code = %d)", e.getError(), e.getStatusCode()), e);
+            }
         } catch (Exception e) {
             throw new IllegalStateException("Unable to sync Adyen notification configuration", e);
         }
